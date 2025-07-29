@@ -102,29 +102,121 @@ Analyze the user's requirements and select the appropriate template:
 npx create-expo-app MyApp
 # Also WRONG - Don't manually create App.js, package.json, etc.
 
-# CORRECT - Copy from QlurAI template OR create QlurAI-style structure
-cp -r /Users/saul_sharma/projects/startup/qlurplatform/templates/expo/default ./MyApp || {
-  echo "Creating QlurAI-style Expo app with Expo Router + NativeWind..."
-  mkdir -p MyApp/app/\(tabs\)
-  # Create QlurAI structure with ScrollView, NativeWind, and Expo Router
-}
+# CORRECT - MUST copy from QlurAI public template repository
+echo "Cloning QlurAI templates repository..."
+if [ ! -d "qlur-templates" ]; then
+  git clone https://github.com/qlur-ai/templates.git qlur-templates
+fi
+
+if [ ! -d "qlur-templates/expo/default" ]; then
+  echo "ERROR: QlurAI Expo template not found! Manual Expo creation causes MIME type errors."
+  echo "This will result in Metro bundler serving JS files as application/json"
+  echo "SOLUTION: Template repository may be corrupted or unavailable"
+  exit 1
+fi
+
+echo "Copying QlurAI Expo template with fixed Metro configuration..."
+cp -r qlur-templates/expo/default ./MyApp
 cd MyApp
-npm install
+bun install
 
 # Start Expo dev server in background
-npm run web &
-sleep 3
+bun run web &
+sleep 5
 
-# Create public tunnel for external access (use tunneling microagent)
-# Install cloudflared for reliable tunneling
-wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared-linux-amd64.deb
+# CRITICAL: Map Expo port to OpenHands expected port for App BETA tab access
+echo "Mapping Expo port 8081 to OpenHands port 51555..."
 
-# Create tunnel to Expo server (port 8081)
-cloudflared tunnel --url http://localhost:8081
+# Install socat for port mapping
+sudo apt-get update && sudo apt-get install -y socat
+
+# Map Expo port (8081) to OpenHands port (51555)
+socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
+
+echo "SUCCESS: Expo app is now accessible via OpenHands App BETA tab!"
+echo "The app will appear as 'Available Host: http://localhost:51555' in the OpenHands interface."
+
+## Critical Metro Configuration for Web
+
+**If you encounter MIME type errors or 500 errors, ensure metro.config.js has proper web configuration:**
+
+```javascript
+const { getDefaultConfig } = require('expo/metro-config');
+
+const config = getDefaultConfig(__dirname);
+
+// Add web platform support
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
+// Configure web assets
+config.resolver.assetExts = [...config.resolver.assetExts, 'bin'];
+config.resolver.sourceExts = [...config.resolver.sourceExts, 'web.js', 'web.ts', 'web.tsx'];
+
+// Ensure proper MIME types for web
+config.server = {
+  ...config.server,
+  rewriteRequestUrl: (url) => {
+    // Fix common Metro web issues
+    return url.replace(/\/+/g, '/');
+  },
+};
+
+module.exports = config;
 ```
 
-**IMPORTANT**: The template path MUST be absolute. Use the full QlurAI template path.
+**Common Issues & Solutions:**
+
+### MIME Type Errors (500 Internal Server Error)
+**This error occurs when Metro bundler serves JS files as `application/json` instead of `application/javascript`.**
+
+**ROOT CAUSE**: Manual Expo setup without proper Metro configuration.
+
+**SOLUTION**: You MUST delete the current app and copy from QlurAI template:
+
+```bash
+# 1. Delete the broken manual setup
+rm -rf ./current-expo-app
+
+# 2. Copy from QlurAI template (has fixed Metro config)
+if [ ! -d "qlur-templates" ]; then
+  git clone https://github.com/qlur-ai/templates.git qlur-templates
+fi
+cp -r qlur-templates/expo/default ./MyApp
+cd MyApp
+
+# 3. Install dependencies
+bun install
+
+# 4. Start with cleared cache
+bunx expo start --web --clear &
+sleep 10
+
+# 5. Map port for OpenHands
+socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
+```
+
+**Why this works**: Our QlurAI template has the correct `metro.config.js` with proper web server configuration.
+
+### Blank Screen Issues
+If the app loads but shows blank content:
+
+1. **Check React Native Web compatibility** - Ensure all components use NativeWind
+2. **Verify app structure** - Make sure `app/_layout.tsx` and `app/index.tsx` exist
+3. **Check browser console** - Look for JavaScript errors
+4. **Use our QlurAI template** - It has pre-configured Metro settings
+
+### Template Usage (Recommended)
+```bash
+# Always try to copy from QlurAI template first
+if [ ! -d "qlur-templates" ]; then
+  git clone https://github.com/qlur-ai/templates.git qlur-templates
+fi
+cp -r qlur-templates/expo/default ./MyApp && cd MyApp
+# This includes our fixed metro.config.js with proper web settings
+```
+```
+
+**IMPORTANT**: Always clone the QlurAI templates repository first to ensure you have the latest templates.
 
 ### 3. Template Structure
 Each template includes:

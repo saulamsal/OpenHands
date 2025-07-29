@@ -24,14 +24,18 @@ cd MyApp
 
 # Start development server in background
 npm run dev &
-sleep 3
+sleep 5
 
-# Create public tunnel for external access
-wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared-linux-amd64.deb
+# Map Next.js port to OpenHands expected port for App BETA tab access
+echo "Mapping Next.js port 3000 to OpenHands port 51555..."
 
-# Create tunnel to Next.js server (port 3000)
-cloudflared tunnel --url http://localhost:3000
+# Install socat for port mapping
+sudo apt-get update && sudo apt-get install -y socat
+
+# Map Next.js port (3000) to OpenHands port (51555)
+socat TCP-LISTEN:51555,fork TCP:localhost:3000 &
+
+echo "SUCCESS: Next.js app is now accessible via OpenHands App BETA tab!"
 ```
 
 ## Key Features

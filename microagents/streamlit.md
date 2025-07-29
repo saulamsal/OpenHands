@@ -41,12 +41,16 @@ EOF
 streamlit run app.py &
 sleep 5
 
-# Create public tunnel for external access
-wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared-linux-amd64.deb
+# Map Streamlit port to OpenHands expected port for App BETA tab access
+echo "Mapping Streamlit port 8501 to OpenHands port 51555..."
 
-# Create tunnel to Streamlit server (port 8501)
-cloudflared tunnel --url http://localhost:8501
+# Install socat for port mapping
+sudo apt-get update && sudo apt-get install -y socat
+
+# Map Streamlit port (8501) to OpenHands port (51555)
+socat TCP-LISTEN:51555,fork TCP:localhost:8501 &
+
+echo "SUCCESS: Streamlit app is now accessible via OpenHands App BETA tab!"
 ```
 
 ## Key Features
