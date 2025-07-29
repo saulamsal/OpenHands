@@ -24,14 +24,20 @@ Welcome to the OpenHands internal documentation. This folder contains guides for
    - How components communicate
    - Where to find and modify features
 
+4. **[Data Flow Architecture](./data_flow_architecture.md)** 🔄
+   - Visual diagrams of how data flows through the system
+   - Where user data is stored (conversations, API keys, settings)
+   - Docker container management and isolation
+   - Why Docker runs even in development mode
+
 ### Specialized Guides
 
-4. **[PHP/React Developer Guide](./guide_for_php_react_developers.md)** 🔄
+5. **[PHP/React Developer Guide](./guide_for_php_react_developers.md)** 🔄
    - For developers coming from Laravel/PHP backgrounds
    - Maps Laravel concepts to OpenHands/FastAPI
    - Familiar patterns and approaches
 
-5. **[Git Management Guide](./git_management_guide.md)** 🌿
+6. **[Git Management Guide](./git_management_guide.md)** 🌿
    - How we manage our fork and custom modifications
    - Branching strategy (main vs sl-custom)
    - Syncing with upstream OpenHands
