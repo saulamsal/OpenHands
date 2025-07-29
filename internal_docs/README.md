@@ -31,6 +31,12 @@ Welcome to the OpenHands internal documentation. This folder contains guides for
    - Maps Laravel concepts to OpenHands/FastAPI
    - Familiar patterns and approaches
 
+5. **[Git Management Guide](./git_management_guide.md)** 🌿
+   - How we manage our fork and custom modifications
+   - Branching strategy (main vs sl-custom)
+   - Syncing with upstream OpenHands
+   - **IMPORTANT**: Read this before making any Git operations
+
 ## 🎯 Quick Start
 
 - **Want to develop?** → [Local Development Guide](./local_development_guide.md)
