@@ -11,6 +11,6 @@ fi
 # Quick commit and push
 git add .
 git commit --no-verify -m "$1"
-git push origin sl-custom
+# git push origin sl-custom
 
 echo "✅ Done! Committed and pushed to sl-custom"

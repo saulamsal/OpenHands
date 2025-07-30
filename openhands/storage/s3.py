@@ -28,12 +28,16 @@ class S3FileStore(FileStore):
         if bucket_name is None:
             bucket_name = os.environ['AWS_S3_BUCKET']
         self.bucket: str = bucket_name
+        # Check if SSL verification should be disabled (for local development)
+        verify_ssl = os.getenv('AWS_S3_VERIFY_SSL', 'true').lower() == 'true'
+        
         self.client: Any = boto3.client(
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             endpoint_url=endpoint,
             use_ssl=secure,
+            verify=verify_ssl,
         )
 
     def write(self, path: str, contents: str | bytes) -> None:
