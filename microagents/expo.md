@@ -103,7 +103,7 @@ npm install
 npx expo start --web --tunnel
 ```
 
-**🛑 NEVER USE BACKGROUND (&) - LET IT RUN IN FOREGROUND 🛑**  
+**🛑 NEVER USE BACKGROUND (&) - LET IT RUN IN FOREGROUND 🛑**
 **🛑 DO NOT PROCEED UNTIL USER SEES EXPO OUTPUT AND TUNNEL URL 🛑**
 
 ## 🎨 PHASE 2: ADD FEATURES (ONLY AFTER PHASE 1 CONFIRMED)
@@ -117,7 +117,7 @@ Then modify `app/index.tsx` for specific features requested.
 
 **Example user requests:**
 - "Simple reminder app" → Get basic app running FIRST
-- "Calorie tracker" → Get basic app running FIRST  
+- "Calorie tracker" → Get basic app running FIRST
 - "Todo list" → Get basic app running FIRST
 
 ## 🛑 CRITICAL WARNINGS
@@ -126,7 +126,7 @@ Then modify `app/index.tsx` for specific features requested.
 - **Using background processes (&) - causes hanging**
 - **Modifying ANY files before Expo tunnel URL appears**
 - **Complex file editing with str_replace_editor**
-- Installing lsof, psmisc, or fuser  
+- Installing lsof, psmisc, or fuser
 - Using sudo pkill, killall, or fuser commands
 - Specifying custom ports
 - "Troubleshooting" anything - just restart fresh
@@ -136,7 +136,7 @@ Then modify `app/index.tsx` for specific features requested.
 - **WAIT for user confirmation** before modifying code
 - Use the 3 commands above EXACTLY as written
 - NEVER add port flags (--port anything)
-- Let Expo choose its own port automatically  
+- Let Expo choose its own port automatically
 - Use --tunnel flag for reliable connectivity
 - Wait 90 seconds for OpenHands detection
 
