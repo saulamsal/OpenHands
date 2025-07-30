@@ -17,34 +17,16 @@ You are an expert in Laravel web development with PHP.
 ## Project Initialization
 
 ```bash
-# Install Composer (if not available)
-curl -sS https://getcomposer.org/installer | php
-sudo mv composer.phar /usr/local/bin/composer
+# Simple Laravel setup - let OpenHands handle port detection
+curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/local/bin/composer
 
-# Create Laravel project
-composer create-project laravel/laravel MyProject
-cd MyProject
+composer create-project laravel/laravel MyProject && cd MyProject
 
-# Install dependencies
-composer install
+composer install && php artisan key:generate
 
-# Generate application key
-php artisan key:generate
+php artisan serve &
 
-# Start Laravel development server in background
-php artisan serve --host=0.0.0.0 --port=8000 &
-sleep 5
-
-# Map Laravel port to OpenHands expected port for App BETA tab access
-echo "Mapping Laravel port 8000 to OpenHands port 51555..."
-
-# Install socat for port mapping
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map Laravel port (8000) to OpenHands port (51555)
-socat TCP-LISTEN:51555,fork TCP:localhost:8000 &
-
-echo "SUCCESS: Laravel app is now accessible via OpenHands App BETA tab!"
+echo "✅ Done! OpenHands will show Laravel app in 'Available Hosts' automatically"
 ```
 
 ## Key Features

@@ -16,33 +16,16 @@ You are an expert in Django web development with Python.
 ## Project Initialization
 
 ```bash
-# Install Django
+# Simple Django setup - let OpenHands handle port detection
 pip install django
 
-# Create Django project
-django-admin startproject MyProject
-cd MyProject
+django-admin startproject MyProject && cd MyProject
 
-# Create Django app
-python manage.py startapp myapp
+python manage.py startapp myapp && python manage.py migrate
 
-# Run migrations
-python manage.py migrate
+python manage.py runserver &
 
-# Start Django development server in background
-python manage.py runserver 0.0.0.0:8000 &
-sleep 5
-
-# Map Django port to OpenHands expected port for App BETA tab access
-echo "Mapping Django port 8000 to OpenHands port 51555..."
-
-# Install socat for port mapping
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map Django port (8000) to OpenHands port (51555)
-socat TCP-LISTEN:51555,fork TCP:localhost:8000 &
-
-echo "SUCCESS: Django app is now accessible via OpenHands App BETA tab!"
+echo "✅ Done! OpenHands will show Django app in 'Available Hosts' automatically"
 ```
 
 ## Key Features

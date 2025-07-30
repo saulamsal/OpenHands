@@ -119,35 +119,14 @@ echo "Copying QlurAI Expo template with fixed Metro configuration..."
 cp -r qlur-templates/expo/default ./MyApp
 cd MyApp
 
-# Simple, reliable setup - no complex chaining!
-echo "🧹 Cleaning up..."
-pkill -f "bun run dev:web" 2>/dev/null || true
-pkill socat 2>/dev/null || true
+# Bulletproof Expo setup - zero configuration needed
+echo "🧹 Cleaning up..." && pkill -f "expo" 2>/dev/null || true && pkill -f "node" 2>/dev/null || true
 
-echo "📦 Installing socat..."
-sudo apt-get update -qq 
-sudo apt-get install -y socat
+echo "📦 Installing dependencies..." && npm install
 
-echo "📦 Installing bun..."
-if ! command -v bun &> /dev/null; then
-  curl -fsSL https://bun.sh/install | bash
-  export PATH="$HOME/.bun/bin:$PATH"
-fi
-export PATH="$HOME/.bun/bin:$PATH"
+echo "🚀 Starting Expo server..." && npx expo start --web --clear &
 
-echo "📦 Installing dependencies..."
-bun install
-
-echo "🚀 Starting Expo server..."
-bun run dev:web > /tmp/expo.log 2>&1 &
-sleep 12
-
-echo "🌐 Setting up port mapping to 51555..."
-socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
-sleep 3
-
-echo "✅ Expo app should be accessible at http://localhost:51555"
-echo "📝 Check logs: cat /tmp/expo.log"
+echo "✅ Done! OpenHands will show the app in 'Available Hosts' automatically (wait ~30 seconds for bundling)"
 
 ## Critical Metro Configuration for Web
 
@@ -177,61 +156,43 @@ config.server = {
 module.exports = config;
 ```
 
-**Common Issues & Solutions:**
+**If Issues Occur:**
 
-### MIME Type Errors (500 Internal Server Error)
-**This error occurs when Metro bundler serves JS files as `application/json` instead of `application/javascript`.**
+### ⚠️ **IMPORTANT: Don't Troubleshoot - Start Fresh**
 
-**ROOT CAUSE**: Manual Expo setup without proper Metro configuration.
+If you encounter ANY issues (MIME errors, port conflicts, blank screens), **DO NOT** try to debug or fix them. Instead:
 
-**SOLUTION**: You MUST delete the current app and copy from QlurAI template:
+**SOLUTION: Always start completely fresh:**
 
 ```bash
-# 1. Delete the broken manual setup
-rm -rf ./current-expo-app
+# 1. Clean everything
+rm -rf ./current-project
 
-# 2. Copy from QlurAI template (has fixed Metro config)
+# 2. Copy QlurAI template and start fresh
 if [ ! -d "qlur-templates" ]; then
   git clone https://github.com/qlur-ai/templates.git qlur-templates
 fi
-cp -r qlur-templates/expo/default ./MyApp
-cd MyApp
+cp -r qlur-templates/expo/default ./MyApp && cd MyApp
 
-# 3. Install bun if needed
-if ! command -v bun &> /dev/null; then
-  curl -fsSL https://bun.sh/install | bash
-  export PATH="$HOME/.bun/bin:$PATH"
-fi
+# 3. Simple setup (this ALWAYS works)
+pkill -f "expo" 2>/dev/null || true && pkill -f "node" 2>/dev/null || true
+npm install
+npx expo start --web --clear &
 
-# 4. Install dependencies
-bun install
-
-# 5. Start with cleared cache
-bunx expo start --web --clear &
-sleep 10
-
-# 6. Install socat if needed (handle APT lock)
-if ! command -v socat &> /dev/null; then
-  while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-    echo "Waiting for apt lock..."
-    sleep 2
-  done
-  sudo apt-get update -qq && sudo apt-get install -y socat
-fi
-
-# 7. Map port for OpenHands
-socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
+# 4. Wait for OpenHands to show "Available Hosts"
 ```
 
-**Why this works**: Our QlurAI template has the correct `metro.config.js` with proper web server configuration.
+### ❌ **What NOT to Do:**
+- Don't modify package.json ports
+- Don't use custom --host or --port flags  
+- Don't manually troubleshoot Metro errors
+- Don't install additional packages unless needed for your app logic
 
-### Blank Screen Issues
-If the app loads but shows blank content:
-
-1. **Check React Native Web compatibility** - Ensure all components use NativeWind
-2. **Verify app structure** - Make sure `app/_layout.tsx` and `app/index.tsx` exist
-3. **Check browser console** - Look for JavaScript errors
-4. **Use our QlurAI template** - It has pre-configured Metro settings
+### ✅ **What Always Works:**
+- Use the exact commands above
+- Let Expo choose its own port
+- Let OpenHands detect the port automatically
+- Wait patiently for Metro bundling (~30 seconds)
 
 ### Template Usage (Recommended)
 ```bash
@@ -240,14 +201,9 @@ if [ ! -d "qlur-templates" ]; then
   git clone https://github.com/qlur-ai/templates.git qlur-templates
 fi
 
-# Install bun if not available
-if ! command -v bun &> /dev/null; then
-  curl -fsSL https://bun.sh/install | bash
-  export PATH="$HOME/.bun/bin:$PATH"
-fi
-
-cp -r qlur-templates/expo/default ./MyApp && cd MyApp && bun install
-# This includes our fixed metro.config.js with proper web settings
+# Use npm (already available in container)
+cp -r qlur-templates/expo/default ./MyApp && cd MyApp && npm install && npx expo start --web --clear &
+# OpenHands will automatically detect and show the running app
 ```
 ```
 
@@ -261,12 +217,16 @@ Each template includes:
 - **package.json**: Pre-configured dependencies including web support (react-dom, react-native-web, @expo/metro-runtime)
 - **tailwind.config.js**: NativeWind configuration
 - **app.json**: Expo configuration
-- **web_shim.ts**: Web compatibility for native libraries
+- **metro.config.js**: Fixed Metro configuration for web compatibility
+
+**Pre-installed Dependencies:**
+- **react-native-mmkv**: Already included in template for high-performance storage
+- **All web dependencies**: Template includes react-dom, react-native-web, etc.
 
 **Web Support Pre-configured:**
 - All templates include `react-dom`, `react-native-web`, and `@expo/metro-runtime`
-- No need to run `npx expo install react-dom react-native-web @expo/metro-runtime`
-- Ready for `npm run web` and `npm run export:web` immediately
+- Metro config prevents MIME/bundling errors
+- Ready for `npx expo start --web` immediately
 
 ## Styling with NativeWind
 

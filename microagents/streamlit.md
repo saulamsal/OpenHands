@@ -17,10 +17,9 @@ You are an expert in creating interactive data applications with Streamlit.
 ## Project Initialization
 
 ```bash
-# Install Streamlit
+# Simple Streamlit setup - let OpenHands handle port detection
 pip install streamlit
 
-# Create basic Streamlit app
 cat > app.py << 'EOF'
 import streamlit as st
 import pandas as pd
@@ -37,20 +36,9 @@ chart_data = pd.DataFrame(
 st.line_chart(chart_data)
 EOF
 
-# Start Streamlit in background
 streamlit run app.py &
-sleep 5
 
-# Map Streamlit port to OpenHands expected port for App BETA tab access
-echo "Mapping Streamlit port 8501 to OpenHands port 51555..."
-
-# Install socat for port mapping
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map Streamlit port (8501) to OpenHands port (51555)
-socat TCP-LISTEN:51555,fork TCP:localhost:8501 &
-
-echo "SUCCESS: Streamlit app is now accessible via OpenHands App BETA tab!"
+echo "✅ Done! OpenHands will show Streamlit app in 'Available Hosts' automatically"
 ```
 
 ## Key Features

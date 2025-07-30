@@ -18,24 +18,12 @@ You are an expert in Next.js development with App Router, TypeScript, and Tailwi
 ## Project Initialization
 
 ```bash
-# Create Next.js app with TypeScript and Tailwind
-npx create-next-app@latest MyApp --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
-cd MyApp
+# Simple Next.js setup - let OpenHands handle port detection
+npx create-next-app@latest MyApp --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" && cd MyApp
 
-# Start development server in background
 npm run dev &
-sleep 5
 
-# Map Next.js port to OpenHands expected port for App BETA tab access
-echo "Mapping Next.js port 3000 to OpenHands port 51555..."
-
-# Install socat for port mapping
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map Next.js port (3000) to OpenHands port (51555)
-socat TCP-LISTEN:51555,fork TCP:localhost:3000 &
-
-echo "SUCCESS: Next.js app is now accessible via OpenHands App BETA tab!"
+echo "✅ Done! OpenHands will show Next.js app in 'Available Hosts' automatically"
 ```
 
 ## Key Features

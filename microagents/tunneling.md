@@ -9,18 +9,19 @@ triggers:
 - external access
 - expose port
 - localhost tunnel
-- socat
-- port mapping
+- web access
 ---
 
-# Universal Port Forwarding Expert
+# OpenHands Port Detection Expert
 
-You are an expert in making web services accessible through OpenHands' port forwarding system. This works for ANY framework running inside OpenHands containers.
+You are an expert in understanding how OpenHands automatically detects and exposes web services. OpenHands has NATIVE port detection - no manual tunneling needed!
 
-## Use Cases
+## How OpenHands Native Port Detection Works
 
-**Any web service that needs external access:**
-- Expo apps (port 8081)
+**OpenHands automatically scans for running web services and displays them as "Available Hosts".**
+
+### What OpenHands Detects Automatically:
+- Expo apps (typically port 8081 or random)
 - Next.js apps (port 3000)  
 - React apps (port 3000)
 - Express/Node servers (port 5000)
@@ -30,176 +31,110 @@ You are an expert in making web services accessible through OpenHands' port forw
 - FastAPI servers (port 8000)
 - Laravel apps (port 8000)
 - Static file servers (any port)
-- Databases with web UIs
-- API servers
-- Development servers
+- Any HTTP service on any port
 
-## OpenHands Port Forwarding System
+### Native Detection Features
+- **Automatic Port Scanning**: OpenHands continuously scans for active HTTP services
+- **Available Hosts Display**: Shows detected services in the UI as clickable links
+- **No Configuration Needed**: Just start your web service normally
+- **API Endpoint**: Uses `/api/conversations/{conversation_id}/web-hosts` internally
 
-**OpenHands automatically detects services running on specific ports and makes them available in the "App BETA" tab.**
+## ✅ Recommended Approach: Let OpenHands Do The Work
 
-### Expected OpenHands Ports
-OpenHands looks for services on these ports:
-- `51555` - Primary application port
-- `57374` - Secondary application port  
-- Other dynamically assigned ports
+**The simplest and most reliable approach:**
 
-### Port Mapping with socat
-
-**When your service runs on a different port than expected:**
-
-```bash
-# Install socat (usually pre-installed in OpenHands containers)
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map service port to OpenHands expected port
-socat TCP-LISTEN:OPENHANDS_PORT,fork TCP:localhost:SERVICE_PORT &
-
-# Examples:
-socat TCP-LISTEN:51555,fork TCP:localhost:8081 &  # Expo
-socat TCP-LISTEN:51555,fork TCP:localhost:3000 &  # Next.js  
-socat TCP-LISTEN:51555,fork TCP:localhost:8000 &  # Django/Laravel
-socat TCP-LISTEN:51555,fork TCP:localhost:8501 &  # Streamlit
-```
-
-## Universal Port Forwarding Protocol
-
-**For ANY web service in OpenHands:**
-
-1. **Start the service in background**:
+1. **Just start your web service normally**:
    ```bash
    # Examples for different frameworks:
    npm run dev &          # Next.js/React (port 3000)
-   npm run web &          # Expo (port 8081)
+   npm run dev:web &      # Expo (port 8081)
    python app.py &        # Flask (port 5000)
    python manage.py runserver &  # Django (port 8000)
    php artisan serve &    # Laravel (port 8000)
    streamlit run app.py & # Streamlit (port 8501)
    ```
 
-2. **Wait for service to start**:
+2. **Wait for OpenHands to detect it**:
    ```bash
-   sleep 5  # Give service time to start
+   sleep 10  # Give service time to start and be detected
    ```
 
-3. **Map to OpenHands expected port**:
-   ```bash
-   # Install socat if not available
-   sudo apt-get update && sudo apt-get install -y socat
-   
-   # Map service port to OpenHands port 51555
-   socat TCP-LISTEN:51555,fork TCP:localhost:SERVICE_PORT &
-   
-   # Examples:
-   socat TCP-LISTEN:51555,fork TCP:localhost:3000 &  # Next.js
-   socat TCP-LISTEN:51555,fork TCP:localhost:8081 &  # Expo
-   socat TCP-LISTEN:51555,fork TCP:localhost:8000 &  # Django/Laravel
-   socat TCP-LISTEN:51555,fork TCP:localhost:8501 &  # Streamlit
-   ```
-
-4. **Access via OpenHands App BETA tab**
-
-## Port Detection
-
-**Auto-detect common ports:**
-```bash
-# Check what ports are in use
-ss -tlnp | grep LISTEN | grep -E ':(3000|8081|5000|8000|8501|4000)'
-
-# Or check specific port
-curl -s http://localhost:8081 > /dev/null && echo "Port 8081 is active"
-```
+3. **Access via "Available Hosts" in OpenHands UI**:
+   - OpenHands will automatically show detected services
+   - Click on the provided links to access your application
+   - No port mapping or configuration needed!
 
 ## Service-Specific Examples
 
 ### Expo App
 ```bash
-npm run web &
-sleep 5
-sudo apt-get update && sudo apt-get install -y socat
-socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
-echo "Expo app accessible via OpenHands App BETA tab!"
+npm run dev:web &
+sleep 10
+# Check OpenHands "Available Hosts" - should show the detected Expo server
 ```
 
 ### Next.js App  
 ```bash
 npm run dev &
-sleep 5
-sudo apt-get update && sudo apt-get install -y socat
-socat TCP-LISTEN:51555,fork TCP:localhost:3000 &
-echo "Next.js app accessible via OpenHands App BETA tab!"
+sleep 10
+# Check OpenHands "Available Hosts" - should show the detected Next.js server
 ```
 
 ### Flask/FastAPI
 ```bash
 python app.py &
-sleep 5
-sudo apt-get update && sudo apt-get install -y socat
-socat TCP-LISTEN:51555,fork TCP:localhost:5000 &
-echo "Flask app accessible via OpenHands App BETA tab!"
+sleep 10
+# Check OpenHands "Available Hosts" - should show the detected Flask server
 ```
 
 ### Streamlit
 ```bash
 streamlit run app.py &
-sleep 5
-sudo apt-get update && sudo apt-get install -y socat
-socat TCP-LISTEN:51555,fork TCP:localhost:8501 &
-echo "Streamlit app accessible via OpenHands App BETA tab!"
+sleep 10
+# Check OpenHands "Available Hosts" - should show the detected Streamlit server
 ```
 
 ## Multiple Services
 
-**Map multiple ports simultaneously:**
+**Running multiple services simultaneously:**
 ```bash
-# Start multiple services
-npm run web &          # Expo on 8081
-npm run api &          # API on 5000
-sleep 5
+# Start multiple services - OpenHands will detect them all
+npm run dev &          # Frontend on port 3000
+python app.py &        # API on port 5000
+streamlit run dash.py & # Dashboard on port 8501
+sleep 15
 
-# Install socat
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map primary service to 51555
-socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
-
-# Map secondary service to 57374
-socat TCP-LISTEN:57374,fork TCP:localhost:5000 &
+# All services will appear in OpenHands "Available Hosts"
 ```
 
 ## Best Practices
 
-1. **Always start service in background** (`&`) before port mapping
-2. **Add sleep delay** to ensure service is ready
-3. **Use port 51555 as primary** for OpenHands App BETA tab
-4. **Use port 57374 as secondary** for additional services
-5. **Install socat once** per container session
-6. **Kill socat processes** when done: `pkill socat`
+1. **Start services in background** (`&`) so they keep running
+2. **Add sleep delays** to ensure services are fully started
+3. **Use standard ports** that frameworks expect (no need to override)
+4. **Let OpenHands detect automatically** - don't fight the system
+5. **Check "Available Hosts"** in OpenHands UI for detected services
 
-## Security Notes
+## Benefits of Native Detection
 
-- Port mapping stays within OpenHands container environment
-- Safe for development and testing within OpenHands
-- No external internet exposure (unlike cloudflared/ngrok)
-- Only accessible through OpenHands App BETA tab
+- ✅ **No complex setup** - just start your service
+- ✅ **No port conflicts** - OpenHands handles everything
+- ✅ **No additional dependencies** - no socat, ngrok, etc.
+- ✅ **Reliable detection** - works with any HTTP service
+- ✅ **Clean UI** - services appear as clickable links
 
 ## Troubleshooting
 
-**Service not accessible via OpenHands App BETA tab:**
+**Service not appearing in "Available Hosts":**
 ```bash
-# Check if service is running locally first
+# 1. Check if service is actually running
 curl http://localhost:PORT_NUMBER
 
-# Check if port is bound correctly
-ss -tlnp | grep :PORT_NUMBER
+# 2. Wait longer for detection (up to 30 seconds)
+sleep 30
 
-# Check if socat mapping is active
-ss -tlnp | grep :51555
-
-# Restart port mapping if needed
-pkill socat
-sudo apt-get update && sudo apt-get install -y socat
-socat TCP-LISTEN:51555,fork TCP:localhost:PORT_NUMBER &
+# 3. Check if service binds to localhost vs 0.0.0.0
+# Some services need --host=0.0.0.0 to be accessible
 ```
 
-This universal approach works for **any web service** regardless of technology stack.
+This native approach works for **any web service** and is much more reliable than manual port mapping!
