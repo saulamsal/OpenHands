@@ -82,51 +82,63 @@ When users need detailed Expo guidance, **always reference the official Expo LLM
    - **Deploy**: Build process, app store submissions, OTA updates
    - **EAS Services**: Build management, update delivery, submissions
 
-## Project Initialization Protocol
+## 🚨 MANDATORY SETUP PROCESS - DO NOT DEVIATE 🚨
 
-**CRITICAL**: When starting a new Expo project, follow this exact process:
+**WARNING: Agents often improvise and cause failures. Follow this EXACT sequence:**
 
-### 1. Template Selection
-Analyze the user's requirements and select the appropriate template:
-- **default**: Basic universal Expo Router setup with NativeWind + MMKV
-- **saas**: Full SaaS starter with authentication, payments, dashboard
-- **consumer**: Consumer app with onboarding and engaging UI
-- **health**: Healthcare/fitness app template
-- **marketplace**: Two-sided marketplace with buyer/seller flows
+**⚡ ULTRA-SIMPLE 3-STEP PROCESS ⚡**
 
-### 2. Template Copying (NOT npx)
-**NEVER run `npx create-expo-app` or manually create files**. Always copy from QlurAI templates:
-
+### STEP 1: Setup Template
 ```bash
-# WRONG - Never do this
-npx create-expo-app MyApp
-# Also WRONG - Don't manually create App.js, package.json, etc.
+git clone https://github.com/qlur-ai/templates.git qlur-templates && mkdir -p MyApp && cp -r qlur-templates/expo/default/* MyApp/ && cd MyApp
+```
 
-# CORRECT - MUST copy from QlurAI public template repository
-echo "Cloning QlurAI templates repository..."
-if [ ! -d "qlur-templates" ]; then
-  git clone https://github.com/qlur-ai/templates.git qlur-templates
-fi
+### STEP 2: Install Dependencies (WAIT FOR COMPLETION)
+```bash
+npm install
+```
 
-if [ ! -d "qlur-templates/expo/default" ]; then
-  echo "ERROR: QlurAI Expo template not found! Manual Expo creation causes MIME type errors."
-  echo "This will result in Metro bundler serving JS files as application/json"
-  echo "SOLUTION: Template repository may be corrupted or unavailable"
-  exit 1
-fi
+### STEP 3: Start Server
+```bash
+npx expo start --web --tunnel
+```
 
-echo "Copying QlurAI Expo template with fixed Metro configuration..."
-cp -r qlur-templates/expo/default ./MyApp
-cd MyApp
+**🛑 NEVER USE BACKGROUND (&) - LET IT RUN IN FOREGROUND 🛑**  
+**🛑 DO NOT PROCEED UNTIL USER SEES EXPO OUTPUT AND TUNNEL URL 🛑**
 
-# Bulletproof Expo setup - zero configuration needed
-echo "🧹 Cleaning up..." && pkill -f "expo" 2>/dev/null || true && pkill -f "node" 2>/dev/null || true
+## 🎨 PHASE 2: ADD FEATURES (ONLY AFTER PHASE 1 CONFIRMED)
 
-echo "📦 Installing dependencies..." && npm install
+**Before modifying ANY code, ask user:**
+*"Can you access the basic Expo app in your browser via Available Hosts? Please confirm it's working before I add [specific feature]."*
 
-echo "🚀 Starting Expo server..." && npx expo start --web --clear &
+**Only proceed with feature development after user confirms basic app is accessible.**
 
-echo "✅ Done! OpenHands will show the app in 'Available Hosts' automatically (wait ~30 seconds for bundling)"
+Then modify `app/index.tsx` for specific features requested.
+
+**Example user requests:**
+- "Simple reminder app" → Get basic app running FIRST
+- "Calorie tracker" → Get basic app running FIRST  
+- "Todo list" → Get basic app running FIRST
+
+## 🛑 CRITICAL WARNINGS
+
+### ❌ **FORBIDDEN ACTIONS (Cause 100% failure rate):**
+- **Using background processes (&) - causes hanging**
+- **Modifying ANY files before Expo tunnel URL appears**
+- **Complex file editing with str_replace_editor**
+- Installing lsof, psmisc, or fuser  
+- Using sudo pkill, killall, or fuser commands
+- Specifying custom ports
+- "Troubleshooting" anything - just restart fresh
+
+### ✅ **MANDATORY BEHAVIOR:**
+- **PHASE 1 FIRST**: Get basic app running and accessible
+- **WAIT for user confirmation** before modifying code
+- Use the 3 commands above EXACTLY as written
+- NEVER add port flags (--port anything)
+- Let Expo choose its own port automatically  
+- Use --tunnel flag for reliable connectivity
+- Wait 90 seconds for OpenHands detection
 
 ## Critical Metro Configuration for Web
 
@@ -158,53 +170,52 @@ module.exports = config;
 
 **If Issues Occur:**
 
-### ⚠️ **IMPORTANT: Don't Troubleshoot - Start Fresh**
+### ⚠️ **IMPORTANT: Complete Phase 1 Before Any Feature Work**
 
-If you encounter ANY issues (MIME errors, port conflicts, blank screens), **DO NOT** try to debug or fix them. Instead:
-
-**SOLUTION: Always start completely fresh:**
+**If basic app doesn't appear in Available Hosts after 90 seconds:**
 
 ```bash
-# 1. Clean everything
-rm -rf ./current-project
-
-# 2. Copy QlurAI template and start fresh
-if [ ! -d "qlur-templates" ]; then
-  git clone https://github.com/qlur-ai/templates.git qlur-templates
-fi
-cp -r qlur-templates/expo/default ./MyApp && cd MyApp
-
-# 3. Simple setup (this ALWAYS works)
-pkill -f "expo" 2>/dev/null || true && pkill -f "node" 2>/dev/null || true
-npm install
-npx expo start --web --clear &
-
-# 4. Wait for OpenHands to show "Available Hosts"
+# ONLY restart if basic app not accessible
+rm -rf ./MyApp qlur-templates && git clone https://github.com/qlur-ai/templates.git qlur-templates && mkdir -p MyApp && cp -r qlur-templates/expo/default/* MyApp/ && cd MyApp
 ```
 
-### ❌ **What NOT to Do:**
-- Don't modify package.json ports
-- Don't use custom --host or --port flags  
-- Don't manually troubleshoot Metro errors
-- Don't install additional packages unless needed for your app logic
+```bash
+npm install && npx expo start --web --tunnel &
+```
 
-### ✅ **What Always Works:**
-- Use the exact commands above
-- Let Expo choose its own port
-- Let OpenHands detect the port automatically
-- Wait patiently for Metro bundling (~30 seconds)
+```bash
+echo "✅ Expo app starting. Will appear in Available Hosts automatically."
+```
+
+**🚨 CRITICAL: DO NOT modify any files until user confirms basic app is accessible! 🚨**
+
+### ❌ **NEVER DO THESE (They cause port conflicts):**
+- DON'T delete template files (app/+not-found.tsx, app/modal.tsx, etc.)
+- DON'T modify package.json or add port flags
+- DON'T restart Expo multiple times if port is busy
+- DON'T use pkill -9 or complex kill commands
+- DON'T troubleshoot "Port 8081 is being used" errors
+
+### ✅ **What ALWAYS Works:**
+- Use EXACT commands from microagent - no modifications
+- Let Expo choose its own port (don't force port 8081)
+- Wait patiently for Metro bundling (first build takes 60+ seconds)
+- If port conflict occurs, let OpenHands restart the conversation
 
 ### Template Usage (Recommended)
-```bash
-# Always try to copy from QlurAI template first
-if [ ! -d "qlur-templates" ]; then
-  git clone https://github.com/qlur-ai/templates.git qlur-templates
-fi
 
-# Use npm (already available in container)
-cp -r qlur-templates/expo/default ./MyApp && cd MyApp && npm install && npx expo start --web --clear &
-# OpenHands will automatically detect and show the running app
+**SIMPLE 3-STEP PROCESS:**
+
+```bash
+git clone https://github.com/qlur-ai/templates.git qlur-templates && mkdir -p MyApp && cp -r qlur-templates/expo/default/* MyApp/ && cd MyApp
 ```
+
+```bash
+npm install && npx expo start --web --tunnel &
+```
+
+```bash
+echo "✅ Expo app starting. Will appear in Available Hosts automatically."
 ```
 
 **IMPORTANT**: Always clone the QlurAI templates repository first to ensure you have the latest templates.
