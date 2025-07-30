@@ -118,23 +118,36 @@ fi
 echo "Copying QlurAI Expo template with fixed Metro configuration..."
 cp -r qlur-templates/expo/default ./MyApp
 cd MyApp
+
+# Simple, reliable setup - no complex chaining!
+echo "🧹 Cleaning up..."
+pkill -f "bun run dev:web" 2>/dev/null || true
+pkill socat 2>/dev/null || true
+
+echo "📦 Installing socat..."
+sudo apt-get update -qq 
+sudo apt-get install -y socat
+
+echo "📦 Installing bun..."
+if ! command -v bun &> /dev/null; then
+  curl -fsSL https://bun.sh/install | bash
+  export PATH="$HOME/.bun/bin:$PATH"
+fi
+export PATH="$HOME/.bun/bin:$PATH"
+
+echo "📦 Installing dependencies..."
 bun install
 
-# Start Expo dev server in background
-bun run web &
-sleep 5
+echo "🚀 Starting Expo server..."
+bun run dev:web > /tmp/expo.log 2>&1 &
+sleep 12
 
-# CRITICAL: Map Expo port to OpenHands expected port for App BETA tab access
-echo "Mapping Expo port 8081 to OpenHands port 51555..."
-
-# Install socat for port mapping
-sudo apt-get update && sudo apt-get install -y socat
-
-# Map Expo port (8081) to OpenHands port (51555)
+echo "🌐 Setting up port mapping to 51555..."
 socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
+sleep 3
 
-echo "SUCCESS: Expo app is now accessible via OpenHands App BETA tab!"
-echo "The app will appear as 'Available Host: http://localhost:51555' in the OpenHands interface."
+echo "✅ Expo app should be accessible at http://localhost:51555"
+echo "📝 Check logs: cat /tmp/expo.log"
 
 ## Critical Metro Configuration for Web
 
@@ -184,14 +197,29 @@ fi
 cp -r qlur-templates/expo/default ./MyApp
 cd MyApp
 
-# 3. Install dependencies
+# 3. Install bun if needed
+if ! command -v bun &> /dev/null; then
+  curl -fsSL https://bun.sh/install | bash
+  export PATH="$HOME/.bun/bin:$PATH"
+fi
+
+# 4. Install dependencies
 bun install
 
-# 4. Start with cleared cache
+# 5. Start with cleared cache
 bunx expo start --web --clear &
 sleep 10
 
-# 5. Map port for OpenHands
+# 6. Install socat if needed (handle APT lock)
+if ! command -v socat &> /dev/null; then
+  while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+    echo "Waiting for apt lock..."
+    sleep 2
+  done
+  sudo apt-get update -qq && sudo apt-get install -y socat
+fi
+
+# 7. Map port for OpenHands
 socat TCP-LISTEN:51555,fork TCP:localhost:8081 &
 ```
 
@@ -211,7 +239,14 @@ If the app loads but shows blank content:
 if [ ! -d "qlur-templates" ]; then
   git clone https://github.com/qlur-ai/templates.git qlur-templates
 fi
-cp -r qlur-templates/expo/default ./MyApp && cd MyApp
+
+# Install bun if not available
+if ! command -v bun &> /dev/null; then
+  curl -fsSL https://bun.sh/install | bash
+  export PATH="$HOME/.bun/bin:$PATH"
+fi
+
+cp -r qlur-templates/expo/default ./MyApp && cd MyApp && bun install
 # This includes our fixed metro.config.js with proper web settings
 ```
 ```
