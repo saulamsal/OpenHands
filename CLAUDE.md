@@ -382,3 +382,48 @@ Security-related components and features.
 A component that checks agent actions for potential security risks.
 
 
+## Conversation System Architecture
+
+### Database + Object Storage Mode ✅ ACTIVE
+OpenHands uses a hybrid storage approach for conversations:
+- **PostgreSQL**: Stores conversation metadata (searchable, indexed)
+- **MinIO/S3**: Stores large event streams and file attachments
+
+### Status: FULLY OPERATIONAL
+- ✅ DatabaseConversationStore fixed and working
+- ✅ MinIO/S3 storage enabled and verified
+- ✅ Events automatically stored in S3 via FileStore abstraction
+- ✅ No code changes needed - configuration-based!
+
+### Configuration
+MinIO storage is **already enabled** in `.env`:
+```bash
+FILE_STORE=s3
+AWS_ACCESS_KEY_ID=herd
+AWS_SECRET_ACCESS_KEY=secretkey
+AWS_S3_BUCKET=qlurplatform
+AWS_S3_ENDPOINT=https://minio.herd.test
+AWS_S3_SECURE=true
+AWS_DEFAULT_REGION=us-east-1
+AWS_S3_VERIFY_SSL=false
+```
+
+### How It Works
+1. Server reads FILE_STORE=s3 from environment
+2. `get_file_store()` returns S3FileStore instance
+3. All events are automatically stored in MinIO at:
+   `conversations/{user_id}/{conversation_id}/events/{event_id}.json`
+
+### Troubleshooting
+- Verify S3 configuration: `poetry run python -c "from openhands.storage import get_file_store; from openhands.core.config import load_openhands_config; c=load_openhands_config(); print(type(get_file_store(c.file_store, c.file_store_path)))"`
+- Check MinIO contents: Use the test script in `internal_docs/plans/fixing-conversation.md`
+- See detailed documentation: `internal_docs/plans/fixing-conversation.md`
+
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+

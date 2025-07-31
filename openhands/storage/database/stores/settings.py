@@ -85,6 +85,30 @@ class DatabaseSettingsStore(SettingsStore):
         # Commit the changes
         await self.db_session.commit()
     
-    async def get_instance(self, *args, **kwargs) -> "DatabaseSettingsStore":
-        """Get an instance of the settings store."""
-        return self
+    @classmethod
+    async def get_instance(
+        cls, 
+        config, 
+        user_id: str | None,
+        db_session: AsyncSession | None = None
+    ) -> "DatabaseSettingsStore":
+        """Create a new instance with database connection.
+        
+        This method is called by the framework to instantiate the store
+        for each request.
+        
+        Args:
+            config: OpenHands configuration
+            user_id: User ID for the store
+            db_session: Optional database session. If not provided, creates a new one.
+        """
+        if db_session is None:
+            # This should only happen in tests or special cases
+            # In production, the session should be injected
+            logger.warning("Creating new database session in SettingsStore - this should be injected in production")
+            from openhands.storage.database.session import get_async_session_maker
+            session_maker = get_async_session_maker()
+            db_session = session_maker()
+        
+        # Create and return store instance
+        return cls(user_id=user_id, db_session=db_session)

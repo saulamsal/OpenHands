@@ -75,6 +75,8 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
+from sqlalchemy.ext.asyncio import AsyncSession
+from openhands.storage.database.session import get_async_session
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
@@ -115,6 +117,7 @@ async def new_conversation(
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> ConversationResponse:
     """Initialize a new session or join an existing one.
 
@@ -183,6 +186,7 @@ async def new_conversation(
             conversation_id=conversation_id,
         )
 
+        # Return the conversation response
         return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
@@ -226,8 +230,13 @@ async def search_conversations(
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
     _auth_user_id: Optional[str] = Depends(require_auth),
-    conversation_store: ConversationStore = Depends(get_conversation_store),
+    user_id: str = Depends(get_user_id),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> ConversationInfoResultSet:
+    # Create conversation store with injected session
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config, user_id, db_session
+    )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
     # Apply filters at API level
@@ -298,9 +307,14 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str,
     _auth_user_id: Optional[str] = Depends(require_auth),
-    conversation_store: ConversationStore = Depends(get_conversation_store),
+    user_id: str = Depends(get_user_id),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> ConversationInfo | None:
     try:
+        # Create conversation store with injected session
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_id, db_session
+        )
         metadata = await conversation_store.get_metadata(conversation_id)
         num_connections = len(
             await conversation_manager.get_connections(filter_to_sids={conversation_id})
@@ -445,7 +459,7 @@ async def start_conversation(
     providers_set: ProvidersSetModel,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
-    conversation_store: ConversationStore = Depends(get_conversation_store),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> ConversationResponse:
     """Start an agent loop for a conversation.
 
@@ -456,6 +470,10 @@ async def start_conversation(
     logger.info(f'Starting conversation: {conversation_id}')
 
     try:
+        # Create conversation store with injected session
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_id, db_session
+        )
         # Check that the conversation exists
         try:
             await conversation_store.get_metadata(conversation_id)
@@ -610,7 +628,7 @@ async def update_conversation(
     conversation_id: str,
     data: UpdateConversationRequest,
     user_id: str | None = Depends(get_user_id),
-    conversation_store: ConversationStore = Depends(get_conversation_store),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> bool:
     """Update conversation metadata.
 
@@ -621,7 +639,7 @@ async def update_conversation(
         conversation_id: The ID of the conversation to update
         data: The conversation update data (title, etc.)
         user_id: The authenticated user ID
-        conversation_store: The conversation store dependency
+        db_session: The database session dependency
 
     Returns:
         bool: True if the conversation was updated successfully
@@ -636,6 +654,10 @@ async def update_conversation(
     )
 
     try:
+        # Create conversation store with injected session
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_id, db_session
+        )
         # Get the existing conversation metadata
         metadata = await conversation_store.get_metadata(conversation_id)
 

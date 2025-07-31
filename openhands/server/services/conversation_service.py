@@ -103,7 +103,16 @@ async def create_new_conversation(
         )
         conversation_title = get_default_conversation_title(conversation_id)
 
-        logger.info(f'Saving metadata for conversation {conversation_id}')
+        logger.info(
+            f'Saving metadata for conversation {conversation_id}',
+            extra={
+                'user_id': user_id,
+                'conversation_id': conversation_id,
+                'repository': selected_repository,
+                'git_provider': git_provider,
+                'trigger': conversation_trigger.value if conversation_trigger else None,
+            }
+        )
         await conversation_store.save_metadata(
             ConversationMetadata(
                 trigger=conversation_trigger,
@@ -187,8 +196,8 @@ async def setup_init_convo_settings(
     git_provider_tokens = create_provider_tokens_object(providers_set)
     logger.info(f'Git provider scaffold: {git_provider_tokens}')
 
-    if server_config.app_mode != AppMode.SAAS and user_secrets:
-        git_provider_tokens = user_secrets.provider_tokens
+    # In database/SaaS mode, we don't override git_provider_tokens from user_secrets
+    # as they should come from the providers_set parameter
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
     if user_secrets:

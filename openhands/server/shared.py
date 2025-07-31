@@ -26,12 +26,21 @@ assert isinstance(server_config_interface, ServerConfig), (
     'Loaded server config interface is not a ServerConfig, despite this being assumed'
 )
 server_config: ServerConfig = server_config_interface
+# Debug logging for file store initialization
+from openhands.core.logger import openhands_logger as logger
+
+logger.info(f"Initializing FileStore with type: {config.file_store}")
+if config.file_store == 's3':
+    logger.info(f"S3 Configuration: bucket={os.getenv('AWS_S3_BUCKET')}, endpoint={os.getenv('AWS_S3_ENDPOINT')}")
+
 file_store: FileStore = get_file_store(
     config.file_store,
     config.file_store_path,
     config.file_store_web_hook_url,
     config.file_store_web_hook_headers,
 )
+
+logger.info(f"FileStore initialized: {file_store.__class__.__name__}")
 
 client_manager = None
 redis_host = os.environ.get('REDIS_HOST')

@@ -69,6 +69,30 @@ class DatabaseSecretsStore(SecretsStore):
         # 3. Proper key management
         logger.info(f"Storing secrets for user {self.user_id}")
     
-    async def get_instance(self, *args, **kwargs) -> "DatabaseSecretsStore":
-        """Get an instance of the secrets store."""
-        return self
+    @classmethod
+    async def get_instance(
+        cls, 
+        config, 
+        user_id: str | None,
+        db_session: AsyncSession | None = None
+    ) -> "DatabaseSecretsStore":
+        """Create a new instance with database connection.
+        
+        This method is called by the framework to instantiate the store
+        for each request.
+        
+        Args:
+            config: OpenHands configuration
+            user_id: User ID for the store
+            db_session: Optional database session. If not provided, creates a new one.
+        """
+        if db_session is None:
+            # This should only happen in tests or special cases
+            # In production, the session should be injected
+            logger.warning("Creating new database session in SecretsStore - this should be injected in production")
+            from openhands.storage.database.session import get_async_session_maker
+            session_maker = get_async_session_maker()
+            db_session = session_maker()
+        
+        # Create and return store instance
+        return cls(user_id=user_id, db_session=db_session)

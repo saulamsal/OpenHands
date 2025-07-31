@@ -8,6 +8,7 @@ from openhands.storage.local import LocalFileStore
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.s3 import S3FileStore
 from openhands.storage.web_hook import WebHookFileStore
+from openhands.core.logger import openhands_logger as logger
 
 
 def get_file_store(
@@ -21,12 +22,17 @@ def get_file_store(
         if file_store_path is None:
             raise ValueError('file_store_path is required for local file store')
         store = LocalFileStore(file_store_path)
+        logger.info(f'Initialized LocalFileStore with path: {file_store_path}')
     elif file_store_type == 's3':
-        store = S3FileStore(file_store_path)
+        # S3FileStore should use bucket name from AWS_S3_BUCKET env var, not file_store_path
+        store = S3FileStore(None)  # Will use AWS_S3_BUCKET from environment
+        logger.info(f'Initialized S3FileStore (MinIO/S3) with bucket: {os.getenv("AWS_S3_BUCKET")}')
     elif file_store_type == 'google_cloud':
         store = GoogleCloudFileStore(file_store_path)
+        logger.info(f'Initialized GoogleCloudFileStore with path: {file_store_path}')
     else:
         store = InMemoryFileStore()
+        logger.info('Initialized InMemoryFileStore')
     if file_store_web_hook_url:
         if file_store_web_hook_headers is None:
             # Fallback to default headers. Use the session api key if it is defined in the env.

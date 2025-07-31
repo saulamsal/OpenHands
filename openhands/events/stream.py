@@ -197,6 +197,19 @@ class EventStream(EventStore):
                         'size': len(event_json),
                     },
                 )
+            # Log storage operation for debugging
+            logger.info(
+                f'Storing event to file storage (S3/MinIO): {filename} [{len(event_json)} bytes]',
+                extra={
+                    'event_id': event.id,
+                    'event_type': event.__class__.__name__,
+                    'event_filename': filename,
+                    'size': len(event_json),
+                    'file_store_type': self.file_store.__class__.__name__,
+                    'user_id': self.user_id,
+                    'session_id': self.sid,
+                }
+            )
             self.file_store.write(filename, event_json)
 
             # Store the cache page last - if it is not present during reads then it will simply be bypassed.

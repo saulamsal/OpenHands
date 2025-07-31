@@ -4,11 +4,16 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 let isRedirecting = false;
 
 const getBaseURL = () => {
+  // If VITE_BACKEND_BASE_URL is not set, return empty string to use relative URLs (proxy)
+  if (!import.meta.env.VITE_BACKEND_BASE_URL) {
+    return "";
+  }
+  
   if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window.location.host}`;
+    return `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL}`;
   }
   // SSR fallback
-  return `http://${import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000"}`;
+  return `http://${import.meta.env.VITE_BACKEND_BASE_URL}`;
 };
 
 export const openHands = axios.create({

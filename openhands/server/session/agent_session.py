@@ -331,8 +331,10 @@ class AgentSession:
         custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets or {})  # type: ignore[arg-type]
         env_vars = custom_secrets_handler.get_env_vars()
 
-        self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
+        self.logger.info(f'Initializing runtime `{runtime_name}` now...')
+        self.logger.info(f'Runtime configuration: {config.runtime}')
         runtime_cls = get_runtime_cls(runtime_name)
+        self.logger.info(f'Runtime class: {runtime_cls.__name__}')
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
@@ -378,13 +380,21 @@ class AgentSession:
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
         try:
+            self.logger.info(f'Runtime created: {self.runtime.__class__.__name__}')
+            self.logger.info('Connecting to runtime...')
             await self.runtime.connect()
+            self.logger.info('Runtime connected successfully')
         except AgentRuntimeUnavailableError as e:
             self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
                 self._status_callback(
                     'error', RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
                 )
+            return False
+        except Exception as e:
+            self.logger.error(f'Unexpected error during runtime connection: {e}')
+            import traceback
+            self.logger.error(traceback.format_exc())
             return False
 
         await self.runtime.clone_or_init_repo(

@@ -7,6 +7,7 @@ from sqlalchemy import select, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -18,6 +19,7 @@ from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
 from openhands.storage.database.models import ConversationDB
+from openhands.storage.database.session import get_async_session
 
 
 class DatabaseConversationStore(ConversationStore):
@@ -193,6 +195,32 @@ class DatabaseConversationStore(ConversationStore):
             last_updated_at=conversation.last_updated_at,
         )
     
-    async def get_instance(self, *args, **kwargs) -> "DatabaseConversationStore":
-        """Get an instance of the conversation store."""
-        return self
+    @classmethod
+    async def get_instance(
+        cls, 
+        config: OpenHandsConfig, 
+        user_id: str | None,
+        db_session: AsyncSession | None = None
+    ) -> "DatabaseConversationStore":
+        """Create a new instance with database connection.
+        
+        This method is called by the framework to instantiate the store
+        for each request. 
+        
+        Args:
+            config: OpenHands configuration
+            user_id: User ID for the store
+            db_session: Optional database session. If not provided, creates a new one.
+        """
+        if db_session is None:
+            # This should only happen in tests or special cases
+            # In production, the session should be injected
+            logger.warning("Creating new database session in ConversationStore - this should be injected in production")
+            # We can't use the context manager here because it would close when we return
+            # This is a temporary workaround
+            from openhands.storage.database.session import get_async_session_maker
+            session_maker = get_async_session_maker()
+            db_session = session_maker()
+        
+        # Create and return store instance
+        return cls(user_id=user_id, db_session=db_session)
