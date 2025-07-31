@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -6,6 +8,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderType,
 )
+from openhands.server.auth.dependencies import require_auth
 from openhands.server.dependencies import get_dependencies
 from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
@@ -34,6 +37,7 @@ app = APIRouter(prefix='/api', dependencies=get_dependencies())
     },
 )
 async def load_settings(
+    _user_id: Optional[str] = Depends(require_auth),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
     settings: Settings = Depends(get_user_settings),
@@ -142,6 +146,7 @@ async def store_llm_settings(
 )
 async def store_settings(
     settings: Settings,
+    _user_id: Optional[str] = Depends(require_auth),
     settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     # Check provider tokens are valid

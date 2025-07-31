@@ -9,17 +9,15 @@ export const useLogout = () => {
   const { data: config } = useConfig();
 
   return useMutation({
-    mutationFn: () => OpenHands.logout(config?.APP_MODE ?? "oss"),
+    mutationFn: () => OpenHands.logout(),
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: ["tasks"] });
       queryClient.removeQueries({ queryKey: ["settings"] });
       queryClient.removeQueries({ queryKey: ["user"] });
       queryClient.removeQueries({ queryKey: ["secrets"] });
 
-      // Clear login method and last page from local storage
-      if (config?.APP_MODE === "saas") {
-        clearLoginData();
-      }
+      // Always clear login data (no app mode check needed)
+      clearLoginData();
 
       posthog.reset();
 

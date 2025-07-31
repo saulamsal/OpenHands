@@ -14,11 +14,7 @@ export const useAuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only run in SAAS mode
-    if (config?.APP_MODE !== "saas") {
-      return;
-    }
-
+    // Always run for SAAS mode
     // Wait for auth to load
     if (isAuthLoading) {
       return;
@@ -42,5 +38,5 @@ export const useAuthCallback = () => {
       const newUrl = `${location.pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
       navigate(newUrl, { replace: true });
     }
-  }, [isAuthed, isAuthLoading, location.search, config?.APP_MODE]);
+  }, [isAuthed, isAuthLoading, location.search]);
 };

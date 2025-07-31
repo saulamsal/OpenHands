@@ -28,6 +28,14 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs";
+import { requireAuth } from "#/utils/auth.client";
+import { Route } from "./+types/conversation";
+
+export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
+  // Always require authentication (database is the only mode)
+  await requireAuth(request);
+  return null;
+};
 
 function AppContent() {
   useConversationConfig();

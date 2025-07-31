@@ -16,10 +16,8 @@ export function SettingsButton({
   const { t } = useTranslation();
   const { data: config } = useConfig();
 
-  // Determine the correct settings path based on app mode
-  // In SaaS mode, navigate directly to user settings to avoid the LLM settings page
-  const settingsPath =
-    config?.APP_MODE === "saas" ? "/settings/user" : "/settings";
+  // Always navigate to user settings for SAAS mode
+  const settingsPath = "/settings/user";
 
   return (
     <TooltipButton

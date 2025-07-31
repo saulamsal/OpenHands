@@ -45,8 +45,8 @@ export interface Feedback {
 }
 
 export interface GetConfigResponse {
-  APP_MODE: "saas" | "oss";
   APP_SLUG?: string;
+  APP_MODE?: "saas" | "oss"; // Deprecated - to be removed
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
   STRIPE_PUBLISHABLE_KEY?: string;
@@ -59,6 +59,7 @@ export interface GetConfigResponse {
   MAINTENANCE?: {
     startTime: string;
   };
+  // STORAGE_BACKEND removed - always database mode
 }
 
 export interface GetVSCodeUrlResponse {
@@ -74,6 +75,59 @@ export interface GetTrajectoryResponse {
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoginRequest {
+  username: string; // This is actually the email
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  owner_id: string;
+  is_personal: boolean;
+  created_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  user_id: string;
+  team_id: string;
+  role: "owner" | "admin" | "developer" | "viewer";
+  user_email: string;
+  user_name?: string;
+}
+
+export interface TeamCreateRequest {
+  name: string;
+}
+
+export interface TeamMemberInviteRequest {
+  email: string;
+  role: "admin" | "developer" | "viewer";
 }
 
 export interface RepositorySelection {

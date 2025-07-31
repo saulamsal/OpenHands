@@ -5,7 +5,6 @@ import {
   GitHubAccessTokenResponse,
   GetConfigResponse,
   GetVSCodeUrlResponse,
-  AuthenticateResponse,
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
@@ -14,6 +13,10 @@ import {
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
   CreateMicroagent,
+  User,
+  LoginResponse,
+  Team,
+  TeamMember,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -169,14 +172,18 @@ class OpenHands {
   /**
    * Authenticate with GitHub token
    * @returns Response with authentication status and user info if successful
+   * @deprecated This endpoint doesn't exist in database mode - use auth context instead
    */
   static async authenticate(
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
     if (appMode === "oss") return true;
 
-    // Just make the request, if it succeeds (no exception thrown), return true
-    await openHands.post<AuthenticateResponse>("/api/authenticate");
+    // In database mode, authentication is handled by the auth context
+    // This method is deprecated and should not be called
+    console.warn(
+      "[OpenHands] authenticate() is deprecated - use auth context instead",
+    );
     return true;
   }
 
@@ -374,10 +381,9 @@ class OpenHands {
   }
 
   static async getBalance(): Promise<string> {
-    const { data } = await openHands.get<{ credits: string }>(
-      "/api/billing/credits",
-    );
-    return data.credits;
+    // TODO: Implement billing/credits endpoint in backend
+    console.warn("[OpenHands] getBalance() - billing endpoint not implemented");
+    return "0";
   }
 
   static async getGitUser(): Promise<GitUser> {
@@ -424,10 +430,9 @@ class OpenHands {
     return data;
   }
 
-  static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
-    const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-provider-tokens";
-    await openHands.post(endpoint);
+  static async logout(): Promise<void> {
+    // Always use JWT logout for SAAS/auth-based mode
+    await this.logoutJWT();
   }
 
   static async getGitChanges(conversationId: string): Promise<GitChange[]> {
@@ -530,6 +535,157 @@ class OpenHands {
     );
 
     return data;
+  }
+
+  // New auth methods
+  static async login(email: string, password: string): Promise<LoginResponse> {
+    const formData = new URLSearchParams();
+    formData.append("username", email); // FastAPI-Users expects "username" field
+    formData.append("password", password);
+
+    const { data } = await openHands.post<LoginResponse>(
+      "/api/auth/jwt/login",
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    );
+    return data;
+  }
+
+  static async register(
+    email: string,
+    password: string,
+    name?: string,
+  ): Promise<User> {
+    const { data } = await openHands.post<User>(
+      "/api/auth/register-with-team",
+      {
+        email,
+        password,
+        name,
+      },
+    );
+    return data;
+  }
+
+  static async getCurrentUser(): Promise<User> {
+    console.log("[OpenHands] Getting current user");
+    try {
+      const { data } = await openHands.get<User>("/api/auth/users/me");
+      console.log("[OpenHands] Current user loaded:", data);
+      return data;
+    } catch (error) {
+      console.error("[OpenHands] Failed to get current user:", error);
+      throw error;
+    }
+  }
+
+  static async getUserTeams(): Promise<any[]> {
+    console.log("[OpenHands] Getting user teams");
+    try {
+      const { data } = await openHands.get<any[]>("/api/teams/");
+      console.log("[OpenHands] Teams loaded:", data);
+      return data;
+    } catch (error: any) {
+      console.error("[OpenHands] Failed to get teams:", error);
+      // Return empty array if teams endpoint doesn't exist yet or returns 401
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        console.log(
+          "[OpenHands] Teams endpoint not available, returning empty array",
+        );
+        return [];
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  static async logoutJWT(): Promise<void> {
+    // Use custom logout endpoint that doesn't require authentication
+    // This prevents 401 errors when token is invalid/expired
+    await openHands.post(
+      "/api/auth/logout",
+      {},
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  static async getGitHubLoginUrl(
+    redirectUrl?: string,
+  ): Promise<{ authorization_url: string }> {
+    const params = redirectUrl
+      ? `?redirect_url=${encodeURIComponent(redirectUrl)}`
+      : "";
+    const { data } = await openHands.get<{ authorization_url: string }>(
+      `/api/auth/github/login${params}`,
+    );
+    return data;
+  }
+
+  // Team methods
+  static async getTeams(): Promise<Team[]> {
+    console.log("[OpenHands] Getting teams");
+    try {
+      const { data } = await openHands.get<Team[]>("/api/teams/");
+      console.log("[OpenHands] Teams loaded:", data?.length || 0);
+      return data;
+    } catch (error: any) {
+      console.error("[OpenHands] Failed to get teams:", error);
+      // Return empty array if teams endpoint doesn't exist yet or returns 401
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        console.log(
+          "[OpenHands] Teams endpoint not available, returning empty array",
+        );
+        return [];
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  static async createTeam(name: string): Promise<Team> {
+    const { data } = await openHands.post<Team>("/api/teams/", { name });
+    return data;
+  }
+
+  static async getTeam(teamId: string): Promise<Team> {
+    const { data } = await openHands.get<Team>(`/api/teams/${teamId}`);
+    return data;
+  }
+
+  static async updateTeam(teamId: string, name: string): Promise<Team> {
+    const { data } = await openHands.patch<Team>(`/api/teams/${teamId}`, {
+      name,
+    });
+    return data;
+  }
+
+  static async deleteTeam(teamId: string): Promise<void> {
+    await openHands.delete(`/api/teams/${teamId}`);
+  }
+
+  static async getTeamMembers(teamId: string): Promise<TeamMember[]> {
+    const { data } = await openHands.get<TeamMember[]>(
+      `/api/teams/${teamId}/members`,
+    );
+    return data;
+  }
+
+  static async inviteTeamMember(
+    teamId: string,
+    email: string,
+    role: "admin" | "developer" | "viewer",
+  ): Promise<void> {
+    await openHands.post(`/api/teams/${teamId}/members`, { email, role });
+  }
+
+  static async removeTeamMember(teamId: string, userId: string): Promise<void> {
+    await openHands.delete(`/api/teams/${teamId}/members/${userId}`);
   }
 }
 

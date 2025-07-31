@@ -18,11 +18,18 @@ import { displayErrorToast } from "./utils/custom-toast-handlers";
 import { queryClient } from "./query-client-config";
 
 function PosthogInit() {
+  const [mounted, setMounted] = React.useState(false);
   const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
     null,
   );
 
   React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+
     (async () => {
       try {
         const config = await OpenHands.getConfig();
@@ -31,16 +38,16 @@ function PosthogInit() {
         displayErrorToast("Error fetching PostHog client key");
       }
     })();
-  }, []);
+  }, [mounted]);
 
   React.useEffect(() => {
-    if (posthogClientKey) {
-      posthog.init(posthogClientKey, {
-        api_host: "https://us.i.posthog.com",
-        person_profiles: "identified_only",
-      });
-    }
-  }, [posthogClientKey]);
+    if (!mounted || !posthogClientKey) return;
+
+    posthog.init(posthogClientKey, {
+      api_host: "https://us.i.posthog.com",
+      person_profiles: "identified_only",
+    });
+  }, [mounted, posthogClientKey]);
 
   return null;
 }
@@ -58,19 +65,28 @@ async function prepareApp() {
   }
 }
 
+function App() {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return (
+    <StrictMode>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <HydratedRouter />
+          <PosthogInit />
+          {mounted && <div id="modal-portal-exit" />}
+        </QueryClientProvider>
+      </Provider>
+    </StrictMode>
+  );
+}
+
 prepareApp().then(() =>
   startTransition(() => {
-    hydrateRoot(
-      document,
-      <StrictMode>
-        <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <HydratedRouter />
-            <PosthogInit />
-            <div id="modal-portal-exit" />
-          </QueryClientProvider>
-        </Provider>
-      </StrictMode>,
-    );
+    hydrateRoot(document, <App />);
   }),
 );

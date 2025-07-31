@@ -5,8 +5,17 @@ import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
+import { Route } from "./+types/home";
+import { requireAuth } from "#/utils/auth.client";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
+
+export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
+  // Always require authentication (database is the only mode)
+  await requireAuth(request);
+
+  return null;
+};
 
 function HomeScreen() {
   const { providers } = useUserProviders();

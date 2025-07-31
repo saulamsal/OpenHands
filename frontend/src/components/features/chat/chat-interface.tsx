@@ -12,7 +12,6 @@ import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { isOpenHandsAction } from "#/types/core/guards";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
 import { useWsClient } from "#/context/ws-client-provider";
@@ -240,7 +239,6 @@ export function ChatInterface() {
                 onClickShareFeedbackActionButton("negative")
               }
               onExportTrajectory={() => onClickExportTrajectoryButton()}
-              isSaasMode={config?.APP_MODE === "saas"}
             />
 
             <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
@@ -265,13 +263,7 @@ export function ChatInterface() {
           />
         </div>
 
-        {config?.APP_MODE !== "saas" && (
-          <FeedbackModal
-            isOpen={feedbackModalIsOpen}
-            onClose={() => setFeedbackModalIsOpen(false)}
-            polarity={feedbackPolarity}
-          />
-        )}
+        {/* FeedbackModal removed - not needed for SAAS mode */}
       </div>
     </ScrollProvider>
   );

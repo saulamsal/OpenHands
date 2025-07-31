@@ -12,7 +12,7 @@ export const useGitUser = () => {
   const user = useQuery({
     queryKey: ["user"],
     queryFn: OpenHands.getGitUser,
-    enabled: !!config?.APP_MODE && providers.length > 0,
+    enabled: providers.length > 0, // Always enable for SAAS mode
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
@@ -25,7 +25,7 @@ export const useGitUser = () => {
         name: user.data.name,
         email: user.data.email,
         user: user.data.login,
-        mode: config?.APP_MODE || "oss",
+        mode: "saas", // Always SAAS mode
       });
     }
   }, [user.data]);

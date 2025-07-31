@@ -102,7 +102,6 @@ export function ExpandableMessage({
 
   if (
     config?.FEATURE_FLAGS.ENABLE_BILLING &&
-    config?.APP_MODE === "saas" &&
     id === I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS
   ) {
     return (

@@ -48,7 +48,7 @@ python-multipart = "*"
 tenacity = ">=8.5,<10.0"
 zope-interface = "7.2"
 pathspec = "^0.12.1"
-pyjwt = "^2.9.0"
+pyjwt = "^2.8.0"
 dirhash = "*"
 tornado = "*"
 python-dotenv = "*"
@@ -81,6 +81,15 @@ python-pptx = "*"
 pylatexenc = "*"
 python-docx = "*"
 bashlex = "^0.18"
+
+# Database dependencies
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.31" }
+alembic = "^1.13.2"
+psycopg = { extras = ["binary", "pool"], version = "^3.2.0" }
+fastapi-users = "^13.0.0"
+fastapi-users-db-sqlalchemy = "^6.0.0"
+passlib = { extras = ["bcrypt"], version = "^1.7.4" }
+httpx-oauth = "^0.14.0"
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"

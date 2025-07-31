@@ -19,7 +19,7 @@ export const useFeedbackExists = (eventId?: number) => {
       if (!eventId) return { exists: false };
       return OpenHands.checkFeedbackExists(conversationId, eventId);
     },
-    enabled: !!eventId && config?.APP_MODE === "saas",
+    enabled: !!eventId, // Always enable for SAAS mode
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

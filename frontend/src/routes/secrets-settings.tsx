@@ -25,7 +25,7 @@ function SecretsSettingsScreen() {
   const { mutate: deleteSecret } = useDeleteSecret();
   const { providers } = useUserProviders();
 
-  const isSaas = config?.APP_MODE === "saas";
+  // Always operate in SaaS mode - no app mode check needed
   const hasProviderSet = providers.length > 0;
 
   const [view, setView] = React.useState<
@@ -69,7 +69,7 @@ function SecretsSettingsScreen() {
     setConfirmationModalIsVisible(false);
   };
 
-  const shouldRenderConnectToGitButton = isSaas && !hasProviderSet;
+  const shouldRenderConnectToGitButton = !hasProviderSet;
 
   return (
     <div

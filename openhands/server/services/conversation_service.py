@@ -21,7 +21,7 @@ from openhands.server.shared import (
     conversation_manager,
     server_config,
 )
-from openhands.server.types import AppMode, LLMAuthenticationError, MissingSettingsError
+from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,

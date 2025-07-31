@@ -22,31 +22,39 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
         if allow_origins_str:
-            allow_origins = tuple(
+            allow_origins = list(
                 origin.strip() for origin in allow_origins_str.split(',')
             )
         else:
-            allow_origins = ()
+            allow_origins = []
+        
+        # Add frontend URL to allowed origins if specified
+        frontend_url = os.getenv('FRONTEND_URL')
+        if frontend_url and frontend_url not in allow_origins:
+            allow_origins.append(frontend_url)
+        
+        # Always add localhost variants for development
+        localhost_origins = [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:3002',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:3001',
+            'http://127.0.0.1:3002',
+        ]
+        for origin in localhost_origins:
+            if origin not in allow_origins:
+                allow_origins.append(origin)
+        
         super().__init__(
             app,
             allow_origins=allow_origins,
             allow_credentials=True,
-            allow_methods=['*'],
-            allow_headers=['*'],
+            allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+            allow_headers=['Content-Type', 'Authorization', 'X-CSRF-Token', 'Accept', 'Origin', 'X-Requested-With'],
+            expose_headers=['Set-Cookie', 'X-CSRF-Token'],
         )
 
-    def is_allowed_origin(self, origin: str) -> bool:
-        if origin and not self.allow_origins and not self.allow_origin_regex:
-            parsed = urlparse(origin)
-            hostname = parsed.hostname or ''
-
-            # Allow any localhost/127.0.0.1 origin regardless of port
-            if hostname in ['localhost', '127.0.0.1']:
-                return True
-
-        # For missing origin or other origins, use the parent class's logic
-        result: bool = super().is_allowed_origin(origin)
-        return result
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):

@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
 import { openHands } from "#/api/open-hands-axios";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { useAuth } from "#/context/auth-context";
 
 // Email validation regex pattern
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -117,9 +118,11 @@ function UserSettingsScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const queryClient = useQueryClient();
   const pollingIntervalRef = useRef<number | null>(null);
   const prevVerificationStatusRef = useRef<boolean | undefined>(undefined);
+  const { logout } = useAuth();
 
   useEffect(() => {
     if (settings?.EMAIL) {
@@ -199,6 +202,18 @@ function UserSettingsScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      displaySuccessToast(t("SETTINGS$LOGOUT_SUCCESS"));
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   const isEmailChanged = email !== originalEmail;
 
   return (
@@ -221,6 +236,32 @@ function UserSettingsScreen() {
             {settings?.EMAIL_VERIFIED === false && <VerificationAlert />}
           </EmailInputSection>
         )}
+
+        {/* Logout Section */}
+        <div className="border-t border-tertiary pt-6 mt-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-lg font-medium text-white">
+                Account Actions
+              </h3>
+              <p className="text-sm text-[#8B949E]">
+                Sign out of your account. You will need to sign back in to
+                access your account.
+              </p>
+            </div>
+            <div className="flex justify-start">
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="px-4 py-2 rounded-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                data-testid="logout-button"
+              >
+                {isLoggingOut ? "Signing out..." : "Sign Out"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

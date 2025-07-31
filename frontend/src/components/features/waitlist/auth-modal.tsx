@@ -9,29 +9,24 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
-import { GetConfigResponse } from "#/api/open-hands.types";
 import { Provider } from "#/types/settings";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
-  appMode?: GetConfigResponse["APP_MODE"] | null;
   providersConfigured?: Provider[];
 }
 
 export function AuthModal({
   githubAuthUrl,
-  appMode,
   providersConfigured,
 }: AuthModalProps) {
   const { t } = useTranslation();
 
   const gitlabAuthUrl = useAuthUrl({
-    appMode: appMode || null,
     identityProvider: "gitlab",
   });
 
   const bitbucketAuthUrl = useAuthUrl({
-    appMode: appMode || null,
     identityProvider: "bitbucket",
   });
 

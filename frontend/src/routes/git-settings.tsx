@@ -48,7 +48,7 @@ function GitSettingsScreen() {
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
   const existingBitbucketHost = settings?.PROVIDER_TOKENS_SET.bitbucket;
 
-  const isSaas = config?.APP_MODE === "saas";
+  // Always operate in SaaS mode - no app mode check needed
   const isGitHubTokenSet = providers.includes("github");
   const isGitLabTokenSet = providers.includes("gitlab");
   const isBitbucketTokenSet = providers.includes("bitbucket");
@@ -109,7 +109,7 @@ function GitSettingsScreen() {
     !githubHostInputHasValue &&
     !gitlabHostInputHasValue &&
     !bitbucketHostInputHasValue;
-  const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
+  const shouldRenderExternalConfigureButtons = config?.APP_SLUG;
 
   return (
     <form
@@ -127,47 +127,41 @@ function GitSettingsScreen() {
             <InstallSlackAppAnchor />
           )}
 
-          {!isSaas && (
-            <GitHubTokenInput
-              name="github-token-input"
-              isGitHubTokenSet={isGitHubTokenSet}
-              onChange={(value) => {
-                setGithubTokenInputHasValue(!!value);
-              }}
-              onGitHubHostChange={(value) => {
-                setGithubHostInputHasValue(!!value);
-              }}
-              githubHostSet={existingGithubHost}
-            />
-          )}
+          <GitHubTokenInput
+            name="github-token-input"
+            isGitHubTokenSet={isGitHubTokenSet}
+            onChange={(value) => {
+              setGithubTokenInputHasValue(!!value);
+            }}
+            onGitHubHostChange={(value) => {
+              setGithubHostInputHasValue(!!value);
+            }}
+            githubHostSet={existingGithubHost}
+          />
 
-          {!isSaas && (
-            <GitLabTokenInput
-              name="gitlab-token-input"
-              isGitLabTokenSet={isGitLabTokenSet}
-              onChange={(value) => {
-                setGitlabTokenInputHasValue(!!value);
-              }}
-              onGitLabHostChange={(value) => {
-                setGitlabHostInputHasValue(!!value);
-              }}
-              gitlabHostSet={existingGitlabHost}
-            />
-          )}
+          <GitLabTokenInput
+            name="gitlab-token-input"
+            isGitLabTokenSet={isGitLabTokenSet}
+            onChange={(value) => {
+              setGitlabTokenInputHasValue(!!value);
+            }}
+            onGitLabHostChange={(value) => {
+              setGitlabHostInputHasValue(!!value);
+            }}
+            gitlabHostSet={existingGitlabHost}
+          />
 
-          {!isSaas && (
-            <BitbucketTokenInput
-              name="bitbucket-token-input"
-              isBitbucketTokenSet={isBitbucketTokenSet}
-              onChange={(value) => {
-                setBitbucketTokenInputHasValue(!!value);
-              }}
-              onBitbucketHostChange={(value) => {
-                setBitbucketHostInputHasValue(!!value);
-              }}
-              bitbucketHostSet={existingBitbucketHost}
-            />
-          )}
+          <BitbucketTokenInput
+            name="bitbucket-token-input"
+            isBitbucketTokenSet={isBitbucketTokenSet}
+            onChange={(value) => {
+              setBitbucketTokenInputHasValue(!!value);
+            }}
+            onBitbucketHostChange={(value) => {
+              setBitbucketHostInputHasValue(!!value);
+            }}
+            bitbucketHostSet={existingBitbucketHost}
+          />
         </div>
       )}
 

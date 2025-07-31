@@ -15,7 +15,7 @@ from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import GitService, ProviderType
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import ConversationStoreImpl, config, server_config
-from openhands.server.types import AppMode
+# AppMode no longer needed - we're always in SaaS mode
 from openhands.server.user_auth import (
     get_access_token,
     get_provider_tokens,
@@ -36,8 +36,7 @@ async def get_convo_link(service: GitService, conversation_id: str, body: str) -
     Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR
     """
 
-    if server_config.app_mode != AppMode.SAAS:
-        return body
+    # Always append follow-up link since we're always in SaaS mode
 
     user = await service.get_user()
     username = user.login

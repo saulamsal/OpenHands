@@ -169,18 +169,14 @@ function AppSettingsScreen() {
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
 
-          {config?.APP_MODE === "saas" && (
-            <SettingsSwitch
-              testId="enable-proactive-conversations-switch"
-              name="enable-proactive-conversations-switch"
-              defaultIsToggled={
-                !!settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS
-              }
-              onToggle={checkIfProactiveConversationsSwitchHasChanged}
-            >
-              {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
-            </SettingsSwitch>
-          )}
+          <SettingsSwitch
+            testId="enable-proactive-conversations-switch"
+            name="enable-proactive-conversations-switch"
+            defaultIsToggled={!!settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS}
+            onToggle={checkIfProactiveConversationsSwitchHasChanged}
+          >
+            {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
+          </SettingsSwitch>
 
           <SettingsInput
             testId="max-budget-per-task-input"

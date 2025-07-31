@@ -34,8 +34,7 @@ export function Sidebar() {
     React.useState(false);
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
-  const shouldHideLlmSettings =
-    config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && config?.APP_MODE === "saas";
+  const shouldHideLlmSettings = config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS;
 
   const shouldHideMicroagentManagement =
     config?.FEATURE_FLAGS.HIDE_MICROAGENT_MANAGEMENT;
@@ -55,8 +54,6 @@ export function Sidebar() {
       displayErrorToast(
         "Something went wrong while fetching settings. Please reload the page.",
       );
-    } else if (config?.APP_MODE === "oss" && settingsError?.status === 404) {
-      setSettingsModalIsOpen(true);
     }
   }, [
     settingsError?.status,

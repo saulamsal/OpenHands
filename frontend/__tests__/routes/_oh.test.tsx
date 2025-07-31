@@ -12,8 +12,17 @@ import * as CaptureConsent from "#/utils/handle-capture-consent";
 import OpenHands from "#/api/open-hands";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
+import { AuthProvider } from "#/context/auth-context";
+
 describe("frontend/routes/_oh", () => {
-  const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
+  const RouteStub = createRoutesStub([{ 
+    Component: () => (
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    ), 
+    path: "/" 
+  }]);
 
   const { userIsAuthenticatedMock, settingsAreUpToDateMock } = vi.hoisted(
     () => ({

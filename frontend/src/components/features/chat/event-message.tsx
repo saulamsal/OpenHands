@@ -69,7 +69,8 @@ export function EventMessage({
   } = useFeedbackExists(event.id);
 
   const renderLikertScale = () => {
-    if (config?.APP_MODE !== "saas" || isCheckingFeedback) {
+    // Always show Likert scale for SAAS mode
+    if (isCheckingFeedback) {
       return null;
     }
 

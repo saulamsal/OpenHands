@@ -17,7 +17,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.types import AppMode
+# AppMode no longer needed - we're always in SaaS mode
 from openhands.utils.import_utils import get_impl
 
 
@@ -226,7 +226,7 @@ class GitLabService(BaseGitService, GitService):
 
         return repos
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(self, sort: str) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
         all_repos: list[dict] = []

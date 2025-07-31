@@ -1,11 +1,5 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any, ClassVar, Protocol
-
-
-class AppMode(Enum):
-    OSS = 'oss'
-    SAAS = 'saas'
 
 
 class SessionMiddlewareInterface(Protocol):
@@ -16,7 +10,6 @@ class SessionMiddlewareInterface(Protocol):
 
 class ServerConfigInterface(ABC):
     CONFIG_PATH: ClassVar[str | None]
-    APP_MODE: ClassVar[AppMode]
     POSTHOG_CLIENT_KEY: ClassVar[str]
     GITHUB_CLIENT_ID: ClassVar[str]
     ATTACH_SESSION_MIDDLEWARE_PATH: ClassVar[str]

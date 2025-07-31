@@ -1,4 +1,4 @@
 interface Window {
-  __APP_MODE__?: "saas" | "oss";
+  // APP_MODE removed - always assume SAAS/auth-based mode
   __GITHUB_CLIENT_ID__?: string | null;
 }

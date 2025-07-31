@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -9,6 +11,7 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.memory.memory import Memory
 from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
+from openhands.server.auth.dependencies import require_auth
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager, file_store
@@ -23,6 +26,7 @@ app = APIRouter(
 
 @app.get('/config')
 async def get_remote_runtime_config(
+    _auth_user_id: Optional[str] = Depends(require_auth),
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
     """Retrieve the runtime configuration.
@@ -42,6 +46,7 @@ async def get_remote_runtime_config(
 
 @app.get('/vscode-url')
 async def get_vscode_url(
+    _auth_user_id: Optional[str] = Depends(require_auth),
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
     """Get the VSCode URL.

@@ -1,0 +1,21 @@
+DEBUG:openhands:DEBUG mode enabled.
+[92m22:29:57 - openhands:DEBUG[0m: logger.py:375 - Logging initialized
+[92m22:29:57 - openhands:DEBUG[0m: logger.py:387 - Logging to file in: /Users/saul_sharma/projects/startup/qlurplatform/logs
+2025-07-30 22:29 - openhands_aci:DEBUG - Logger initialized
+2025-07-30 22:29 - openhands_aci.editor.file_cache:DEBUG - Current size updated: 0
+2025-07-30 22:29 - openhands_aci.editor.file_cache:DEBUG - FileCache initialized with directory: /var/folders/07/m4y6dwfj5j9cyvtyplfwprbm0000gn/T/oh_editor_history_fvs4vt6z, size_limit: None, current_size: 0
+[92m22:29:58 - openhands:DEBUG[0m: llm_config.py:176 - Setting reasoning_effort for model claude-sonnet-4-20250514 with reasoning_effort None
+[92m22:29:58 - openhands:WARNING[0m: utils.py:338 - DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. Please use SANDBOX_VOLUMES instead, e.g. 'SANDBOX_VOLUMES=/my/host/dir:/workspace:rw'
+[92m22:29:58 - openhands:INFO[0m: server_config.py:56 - Using config class None
+[92m22:29:58 - openhands:DEBUG[0m: file_config.py:80 - File upload config: max_size=0MB, restrict_types=False, allowed_extensions=['.*']
+INFO:     Started server process [87174]
+INFO:     Waiting for application startup.
+[92m22:29:58 - openhands:DEBUG[0m: shutdown_listener.py:48 - _register_signal_handlers
+[92m22:29:58 - openhands:DEBUG[0m: shutdown_listener.py:52 - _register_signal_handlers:main_thread
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+[92m22:32:00 - openhands:DEBUG[0m: shutdown_listener.py:26 - shutdown_signal:15
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [87174]

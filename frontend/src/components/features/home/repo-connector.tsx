@@ -15,7 +15,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const { data: config } = useConfig();
   const { t } = useTranslation();
 
-  const isSaaS = config?.APP_MODE === "saas";
+  // Always operate in SaaS mode
   const providersAreSet = providers.length > 0;
 
   return (
@@ -30,7 +30,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
         <RepositorySelectionForm onRepoSelection={onRepoSelection} />
       )}
 
-      {isSaaS && providersAreSet && <RepoProviderLinks />}
+      {providersAreSet && <RepoProviderLinks />}
     </section>
   );
 }

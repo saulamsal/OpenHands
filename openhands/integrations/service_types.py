@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.types import AppMode
+# AppMode no longer needed - we're always in SaaS mode
 
 
 class ProviderType(Enum):
@@ -233,7 +233,7 @@ class GitService(Protocol):
         """Search for repositories"""
         ...
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(self, sort: str) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
 

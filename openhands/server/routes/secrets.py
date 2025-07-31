@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -5,6 +7,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, CustomSecret
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
+from openhands.server.auth.dependencies import require_auth
 from openhands.server.dependencies import get_dependencies
 from openhands.server.settings import (
     CustomSecretModel,
@@ -105,6 +108,7 @@ async def check_provider_tokens(
 @app.post('/add-git-providers')
 async def store_provider_tokens(
     provider_info: POSTProviderModel,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     secrets_store: SecretsStore = Depends(get_secrets_store),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
 ) -> JSONResponse:
@@ -157,6 +161,7 @@ async def store_provider_tokens(
 
 @app.post('/unset-provider-tokens', response_model=dict[str, str])
 async def unset_provider_tokens(
+    _auth_user_id: Optional[str] = Depends(require_auth),
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
@@ -185,6 +190,7 @@ async def unset_provider_tokens(
 
 @app.get('/secrets', response_model=GETCustomSecrets)
 async def load_custom_secrets_names(
+    _auth_user_id: Optional[str] = Depends(require_auth),
     user_secrets: UserSecrets | None = Depends(get_user_secrets),
 ) -> GETCustomSecrets | JSONResponse:
     try:
@@ -214,6 +220,7 @@ async def load_custom_secrets_names(
 @app.post('/secrets', response_model=dict[str, str])
 async def create_custom_secret(
     incoming_secret: CustomSecretModel,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
@@ -263,6 +270,7 @@ async def create_custom_secret(
 async def update_custom_secret(
     secret_id: str,
     incoming_secret: CustomSecretWithoutValueModel,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
@@ -314,6 +322,7 @@ async def update_custom_secret(
 @app.delete('/secrets/{secret_id}')
 async def delete_custom_secret(
     secret_id: str,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:

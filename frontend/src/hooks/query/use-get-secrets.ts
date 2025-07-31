@@ -7,11 +7,10 @@ export const useGetSecrets = () => {
   const { data: config } = useConfig();
   const { providers } = useUserProviders();
 
-  const isOss = config?.APP_MODE === "oss";
-
+  // Always operate in SAAS mode
   return useQuery({
     queryKey: ["secrets"],
     queryFn: SecretsService.getSecrets,
-    enabled: isOss || providers.length > 0,
+    enabled: providers.length > 0,
   });
 };

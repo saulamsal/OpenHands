@@ -3,6 +3,7 @@ import os
 import re
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
@@ -39,6 +40,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.auth.dependencies import require_auth
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
@@ -108,6 +110,7 @@ class ProvidersSetModel(BaseModel):
 @app.post('/conversations')
 async def new_conversation(
     data: InitSessionRequest,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
@@ -222,6 +225,7 @@ async def search_conversations(
     limit: int = 20,
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
@@ -293,6 +297,7 @@ async def search_conversations(
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str,
+    _auth_user_id: Optional[str] = Depends(require_auth),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfo | None:
     try:

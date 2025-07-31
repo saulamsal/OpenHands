@@ -12,10 +12,11 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
-import { Sidebar } from "#/components/features/sidebar/sidebar";
+import { EnhancedSidebar } from "#/components/features/sidebar/enhanced-sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
+import { EnhancedAuthModal } from "#/components/features/auth/enhanced-auth-modal";
+import { useAuth } from "#/context/auth-context";
 import { ReauthModal } from "#/components/features/waitlist/reauth-modal";
-import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
@@ -61,7 +62,7 @@ export function ErrorBoundary() {
   );
 }
 
-export default function MainApp() {
+function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isOnTosPage = useIsOnTosPage();
@@ -69,6 +70,7 @@ export default function MainApp() {
   const { error } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
+  const { isAuthenticated: isDbAuthenticated } = useAuth();
 
   const config = useConfig();
   const {
@@ -79,7 +81,6 @@ export default function MainApp() {
 
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
-    appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
 
@@ -124,10 +125,10 @@ export default function MainApp() {
   }, [isOnTosPage]);
 
   React.useEffect(() => {
-    if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
+    if (settings?.IS_NEW_USER) {
       displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
     }
-  }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
+  }, [settings?.IS_NEW_USER]);
 
   React.useEffect(() => {
     // Don't do any redirects when on TOS page
@@ -179,28 +180,20 @@ export default function MainApp() {
     setLoginMethodExists(checkLoginMethodExists());
   }, [isAuthed, checkLoginMethodExists]);
 
-  const renderAuthModal =
-    !isAuthed &&
-    !isAuthError &&
-    !isFetchingAuth &&
-    !isOnTosPage &&
-    config.data?.APP_MODE === "saas" &&
-    !loginMethodExists; // Don't show auth modal if login method exists in local storage
+  // Always in database mode - no auth modals needed
+  // Authentication is handled by route guards
+  const renderAuthModal = false;
+  const renderReAuthModal = false;
 
-  const renderReAuthModal =
-    !isAuthed &&
-    !isAuthError &&
-    !isFetchingAuth &&
-    !isOnTosPage &&
-    config.data?.APP_MODE === "saas" &&
-    loginMethodExists;
+  // Don't show EnhancedAuthModal anymore - routes handle auth
+  const renderEnhancedAuthModal = false;
 
   return (
     <div
       data-testid="root-layout"
       className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
     >
-      <Sidebar />
+      <EnhancedSidebar />
 
       <div
         id="root-outlet"
@@ -217,22 +210,25 @@ export default function MainApp() {
       {renderAuthModal && (
         <AuthModal
           githubAuthUrl={effectiveGitHubAuthUrl}
-          appMode={config.data?.APP_MODE}
           providersConfigured={config.data?.PROVIDERS_CONFIGURED}
         />
       )}
       {renderReAuthModal && <ReauthModal />}
-      {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
-        <AnalyticsConsentFormModal
-          onClose={() => {
-            setConsentFormIsOpen(false);
-          }}
+      {renderEnhancedAuthModal && (
+        <EnhancedAuthModal
+          githubAuthUrl={effectiveGitHubAuthUrl}
+          providersConfigured={config.data?.PROVIDERS_CONFIGURED}
         />
       )}
+      {/* Analytics consent modal removed - not needed for SAAS mode */}
 
-      {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
-        config.data?.APP_MODE === "saas" &&
-        settings?.IS_NEW_USER && <SetupPaymentModal />}
+      {config.data?.FEATURE_FLAGS.ENABLE_BILLING && settings?.IS_NEW_USER && (
+        <SetupPaymentModal />
+      )}
     </div>
   );
+}
+
+export default function RootLayout() {
+  return <MainApp />;
 }

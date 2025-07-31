@@ -1,18 +1,22 @@
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from openhands.controller.agent import Agent
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.auth.dependencies import require_auth
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import config, server_config
 from openhands.utils.llm import get_supported_llm_models
+from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api/options', dependencies=get_dependencies())
 
 
 @app.get('/models', response_model=list[str])
-async def get_litellm_models() -> list[str]:
+async def get_litellm_models(
+    _user_id: Optional[str] = Depends(require_auth)
+) -> list[str]:
     """Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
@@ -30,7 +34,9 @@ async def get_litellm_models() -> list[str]:
 
 
 @app.get('/agents', response_model=list[str])
-async def get_agents() -> list[str]:
+async def get_agents(
+    _user_id: Optional[str] = Depends(require_auth)
+) -> list[str]:
     """Get all agents supported by LiteLLM.
 
     To get the agents:
@@ -45,7 +51,9 @@ async def get_agents() -> list[str]:
 
 
 @app.get('/security-analyzers', response_model=list[str])
-async def get_security_analyzers() -> list[str]:
+async def get_security_analyzers(
+    _user_id: Optional[str] = Depends(require_auth)
+) -> list[str]:
     """Get all supported security analyzers.
 
     To get the security analyzers:
@@ -60,7 +68,9 @@ async def get_security_analyzers() -> list[str]:
 
 
 @app.get('/config', response_model=dict[str, Any])
-async def get_config() -> dict[str, Any]:
+async def get_config(
+    _user_id: Optional[str] = Depends(require_auth)
+) -> dict[str, Any]:
     """Get current config.
 
     Returns:

@@ -27,7 +27,7 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     User,
 )
-from openhands.server.types import AppMode
+# AppMode no longer needed - we're always in SaaS mode
 
 
 class ProviderToken(BaseModel):
@@ -160,7 +160,7 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(self, sort: str) -> list[Repository]:
         """
         Get repositories from providers
         """
@@ -169,7 +169,7 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.get_repositories(sort, app_mode)
+                service_repos = await service.get_repositories(sort)
                 all_repos.extend(service_repos)
             except Exception as e:
                 logger.warning(f'Error fetching repos from {provider}: {e}')

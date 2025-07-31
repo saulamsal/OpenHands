@@ -4,6 +4,8 @@ import { useCreateConversation } from "#/hooks/mutation/use-create-conversation"
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
 import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
+import { useAuth } from "#/context/auth-context";
+import { useConfig } from "#/hooks/query/use-config";
 
 export function HomeHeader() {
   const navigate = useNavigate();
@@ -14,6 +16,8 @@ export function HomeHeader() {
   } = useCreateConversation();
   const isCreatingConversationElsewhere = useIsCreatingConversation();
   const { t } = useTranslation();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { data: config } = useConfig();
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
@@ -30,15 +34,47 @@ export function HomeHeader() {
           testId="header-launch-button"
           variant="primary"
           type="button"
-          onClick={() =>
+          onClick={() => {
+            console.log("[HomeHeader] Launch clicked - Auth state:", {
+              isAuthenticated,
+              authLoading,
+            });
+
+            // Check if user is not authenticated
+            if (!isAuthenticated && !authLoading) {
+              console.log(
+                "[HomeHeader] Not authenticated, redirecting to login",
+              );
+              navigate("/login");
+              return;
+            }
+
             createConversation(
               {},
               {
-                onSuccess: (data) =>
-                  navigate(`/conversations/${data.conversation_id}`),
+                onSuccess: (data) => {
+                  console.log(
+                    "[HomeHeader] Conversation created successfully:",
+                    data.conversation_id,
+                  );
+                  navigate(`/conversations/${data.conversation_id}`);
+                },
+                onError: (error: any) => {
+                  console.error(
+                    "[HomeHeader] Failed to create conversation:",
+                    error,
+                  );
+                  // If we get a 401 error, redirect to login
+                  if (error?.response?.status === 401) {
+                    console.log(
+                      "[HomeHeader] Got 401 error, redirecting to login",
+                    );
+                    navigate("/login");
+                  }
+                },
               },
-            )
-          }
+            );
+          }}
           isDisabled={isCreatingConversation}
         >
           {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}

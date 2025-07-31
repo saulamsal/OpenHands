@@ -10,10 +10,15 @@ import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { AuthProvider } from "#/context/auth-context";
 
 const RouterStub = createRoutesStub([
   {
-    Component: MainApp,
+    Component: () => (
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    ),
     path: "/",
     children: [
       {

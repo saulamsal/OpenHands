@@ -30,6 +30,11 @@ from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
 
+# Always import auth routes - database is the only mode
+from openhands.server.routes.auth import app as auth_router
+from openhands.server.routes.teams import app as teams_router
+from openhands.server.routes.session import app as session_router
+
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
@@ -59,8 +64,28 @@ app = FastAPI(
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
+# Add debug middleware to log all requests to /api/auth/users/me
+from fastapi import Request
+from openhands.core.logger import openhands_logger as logger
 
+@app.middleware("http")
+async def log_users_me_requests(request: Request, call_next):
+    if request.url.path == "/api/auth/users/me":
+        logger.info(f"MIDDLEWARE: Request to {request.url.path}")
+        logger.info(f"MIDDLEWARE: Method: {request.method}")
+        logger.info(f"MIDDLEWARE: Cookies: {dict(request.cookies)}")
+    response = await call_next(request)
+    if request.url.path == "/api/auth/users/me":
+        logger.info(f"MIDDLEWARE: Response status: {response.status_code}")
+    return response
+
+
+# Always include auth routes - MUST come before public router
+app.include_router(auth_router)
 app.include_router(public_api_router)
+app.include_router(teams_router)
+app.include_router(session_router)
+
 app.include_router(files_api_router)
 app.include_router(security_api_router)
 app.include_router(feedback_api_router)

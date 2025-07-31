@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useUserProviders } from "#/hooks/use-user-providers";
 import {
   setPersonalRepositories,
   setOrganizationRepositories,
@@ -12,6 +14,7 @@ import {
 } from "#/state/microagent-management-slice";
 import { GitRepository } from "#/types/git";
 import { cn } from "#/utils/utils";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
 interface MicroagentManagementSidebarProps {
   isSmallerScreen?: boolean;
@@ -22,7 +25,12 @@ export function MicroagentManagementSidebar({
 }: MicroagentManagementSidebarProps) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: repositories, isLoading } = useUserRepositories();
+  const { providers } = useUserProviders();
+
+  // Check if any Git providers are configured
+  const hasGitProviders = providers.length > 0;
 
   useEffect(() => {
     if (repositories) {
@@ -62,6 +70,23 @@ export function MicroagentManagementSidebar({
           <span className="text-sm text-white">
             {t("HOME$LOADING_REPOSITORIES")}
           </span>
+        </div>
+      ) : !hasGitProviders ? (
+        <div className="flex flex-col items-center justify-center gap-6 flex-1 px-4">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-white mb-2">
+              {t("MICROAGENT$NO_GIT_PROVIDERS_TITLE")}
+            </h3>
+            <p className="text-sm text-gray-400 mb-6">
+              {t("MICROAGENT$NO_GIT_PROVIDERS_DESCRIPTION")}
+            </p>
+          </div>
+          <BrandButton
+            variant="primary"
+            onClick={() => navigate("/settings/integrations")}
+          >
+            {t("MICROAGENT$CONFIGURE_GIT_PROVIDERS")}
+          </BrandButton>
         </div>
       ) : (
         <MicroagentManagementSidebarTabs />

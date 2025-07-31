@@ -13,7 +13,7 @@ export function useLlmApiKey() {
 
   return useQuery({
     queryKey: [LLM_API_KEY_QUERY_KEY],
-    enabled: config?.APP_MODE === "saas",
+    enabled: true, // Always enable for SAAS mode
     queryFn: async () => {
       const { data } =
         await openHands.get<LlmApiKeyResponse>("/api/keys/llm/byor");

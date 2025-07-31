@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse
@@ -18,6 +18,7 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
+from openhands.server.auth.dependencies import require_auth
 from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import FILES_TO_IGNORE
 from openhands.server.files import POSTUploadFilesModel

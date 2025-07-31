@@ -17,25 +17,19 @@ export const useAutoLogin = () => {
 
   // Get the auth URLs for all providers
   const githubAuthUrl = useAuthUrl({
-    appMode: config?.APP_MODE || null,
     identityProvider: "github",
   });
 
   const gitlabAuthUrl = useAuthUrl({
-    appMode: config?.APP_MODE || null,
     identityProvider: "gitlab",
   });
 
   const bitbucketAuthUrl = useAuthUrl({
-    appMode: config?.APP_MODE || null,
     identityProvider: "bitbucket",
   });
 
   useEffect(() => {
-    // Only auto-login in SAAS mode
-    if (config?.APP_MODE !== "saas") {
-      return;
-    }
+    // Always auto-login for SAAS mode
 
     // Wait for auth and config to load
     if (isConfigLoading || isAuthLoading) {
@@ -72,7 +66,6 @@ export const useAutoLogin = () => {
       window.location.href = url.toString();
     }
   }, [
-    config?.APP_MODE,
     isAuthed,
     isConfigLoading,
     isAuthLoading,

@@ -16,7 +16,7 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     User,
 )
-from openhands.server.types import AppMode
+# AppMode no longer needed - we're always in SaaS mode
 from openhands.utils.import_utils import get_impl
 
 
@@ -185,7 +185,7 @@ class BitBucketService(BaseGitService, GitService):
 
         return all_items[:max_items]  # Trim to max_items if needed
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(self, sort: str) -> list[Repository]:
         """Get repositories for the authenticated user using workspaces endpoint.
 
         This method gets all repositories (both public and private) that the user has access to

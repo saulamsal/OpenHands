@@ -24,7 +24,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.types import AppMode
+# AppMode no longer needed - we're always in SaaS mode
 from openhands.utils.import_utils import get_impl
 
 
@@ -192,42 +192,34 @@ class GitHubService(BaseGitService, GitService):
         ts = repo.get('pushed_at')
         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(self, sort: str) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
         all_repos: list[dict] = []
 
-        if app_mode == AppMode.SAAS:
-            # Get all installation IDs and fetch repos for each one
-            installation_ids = await self.get_installation_ids()
+        # Always use SaaS mode - get all installation IDs and fetch repos for each one
+        installation_ids = await self.get_installation_ids()
 
-            # Iterate through each installation ID
-            for installation_id in installation_ids:
-                params = {'per_page': str(PER_PAGE)}
-                url = (
-                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-                )
+        # Iterate through each installation ID
+        for installation_id in installation_ids:
+            params = {'per_page': str(PER_PAGE)}
+            url = (
+                f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+            )
 
-                # Fetch repositories for this installation
-                installation_repos = await self._fetch_paginated_repos(
-                    url, params, MAX_REPOS - len(all_repos), extract_key='repositories'
-                )
+            # Fetch repositories for this installation
+            installation_repos = await self._fetch_paginated_repos(
+                url, params, MAX_REPOS - len(all_repos), extract_key='repositories'
+            )
 
-                all_repos.extend(installation_repos)
+            all_repos.extend(installation_repos)
 
-                # If we've already reached MAX_REPOS, no need to check other installations
-                if len(all_repos) >= MAX_REPOS:
-                    break
+            # If we've already reached MAX_REPOS, no need to check other installations
+            if len(all_repos) >= MAX_REPOS:
+                break
 
-            if sort == 'pushed':
-                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
-        else:
-            # Original behavior for non-SaaS mode
-            params = {'per_page': str(PER_PAGE), 'sort': sort}
-            url = f'{self.BASE_URL}/user/repos'
-
-            # Fetch user repositories
-            all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
+        if sort == 'pushed':
+            all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
 
         # Convert to Repository objects
         return [
