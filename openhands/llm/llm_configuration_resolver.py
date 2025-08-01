@@ -23,7 +23,16 @@ class LLMConfigurationResolver:
         Returns:
             Tuple of (model, api_key, base_url)
         """
-        # ONLY use configuration system - no fallback
+        # Check if we have a direct API key (advanced mode)
+        if settings.llm_api_key and not settings.llm_configuration_id:
+            logger.info(f"LLMConfigurationResolver: Using direct API key (advanced mode)")
+            return (
+                settings.llm_model,
+                str(settings.llm_api_key),
+                settings.llm_base_url
+            )
+        
+        # Use configuration system
         if not settings.llm_configuration_id or not db_session:
             logger.error(f"LLMConfigurationResolver: No configuration ID provided or no database session")
             return (None, None, None)

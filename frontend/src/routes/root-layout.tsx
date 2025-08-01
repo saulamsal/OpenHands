@@ -5,6 +5,7 @@ import {
   Outlet,
   useNavigate,
   useLocation,
+  useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -66,8 +67,9 @@ function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isOnTosPage = useIsOnTosPage();
-  const { data: settings } = useSettings();
+  const { data: settings, refetch: refetchSettings } = useSettings();
   const { error } = useBalance();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
   const { isAuthenticated: isDbAuthenticated } = useAuth();
@@ -129,6 +131,33 @@ function MainApp() {
       displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
     }
   }, [settings?.IS_NEW_USER]);
+
+  // Handle billing success redirect
+  React.useEffect(() => {
+    const billing = searchParams.get("billing");
+    if (billing === "success") {
+      // Call API to mark billing as complete
+      fetch("/api/billing/complete-setup", {
+        method: "POST",
+        credentials: "include",
+      })
+        .then(() => {
+          displaySuccessToast("Payment method added successfully!");
+          // Refetch settings to update IS_NEW_USER
+          refetchSettings();
+          // Remove the query parameter
+          searchParams.delete("billing");
+          setSearchParams(searchParams);
+        })
+        .catch((error) => {
+          console.error("Error completing billing setup:", error);
+        });
+    } else if (billing === "cancelled") {
+      // Handle cancelled payment
+      searchParams.delete("billing");
+      setSearchParams(searchParams);
+    }
+  }, [searchParams, setSearchParams, refetchSettings]);
 
   React.useEffect(() => {
     // Don't do any redirects when on TOS page

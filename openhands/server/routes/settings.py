@@ -46,10 +46,19 @@ async def load_settings(
 ) -> GETSettingsModel | JSONResponse:
     try:
         if not settings:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Settings not found'},
+            # Create default settings for new users
+            settings = Settings(
+                has_completed_billing_setup=False,
+                language='en',
+                enable_default_condenser=True,
+                enable_sound_notifications=False,
+                enable_proactive_conversation_starters=True,
+                llm_model='gpt-4o-mini',  # Default model
+                agent='CodeActAgent',  # Default agent
+                max_iterations=50
             )
+            # Store the default settings
+            await settings_store.store(settings)
 
         # On initial load, user secrets may not be populated with values migrated from settings store
         user_secrets = await invalidate_legacy_secrets_store(
@@ -74,6 +83,7 @@ async def load_settings(
             search_api_key_set=settings.search_api_key is not None
             and bool(settings.search_api_key),
             provider_tokens_set=provider_tokens_set,
+            IS_NEW_USER=not settings.has_completed_billing_setup,  # Show billing modal if not completed
         )
         settings_with_token_data.llm_api_key = None
         settings_with_token_data.search_api_key = None
@@ -126,9 +136,19 @@ async def store_llm_settings(
         logger.info(f"  - existing has_api_key: {bool(existing_settings.llm_api_key)}")
         logger.info(f"  - existing llm_configuration_id: {existing_settings.llm_configuration_id}")
         
-        # ALWAYS clear the API key - we only use configurations now
-        logger.info(f"  - ALWAYS CLEARING API KEY - configurations only")
-        settings.llm_api_key = None
+        # If we have a configuration ID, clear the API key (using configuration mode)
+        # If we don't have a configuration ID but have an API key, keep it (advanced mode)
+        if settings.llm_configuration_id:
+            logger.info(f"  - Configuration mode: clearing API key")
+            settings.llm_api_key = None
+        elif settings.llm_api_key:
+            logger.info(f"  - Advanced mode: keeping API key")
+            # Clear configuration ID if using direct API key
+            settings.llm_configuration_id = None
+        else:
+            # No new API key provided, keep existing
+            if settings.llm_api_key is None and existing_settings.llm_api_key:
+                settings.llm_api_key = existing_settings.llm_api_key
                 
         if settings.llm_model is None:
             settings.llm_model = existing_settings.llm_model
@@ -253,27 +273,34 @@ async def test_llm_settings(
         from openhands.llm.llm_configuration_resolver import LLMConfigurationResolver
         from openhands.storage.database.session import get_async_session_context
         
-        # ONLY use LLM configurations - no legacy fallback
-        if not settings.llm_configuration_id:
-            logger.error(f'No LLM configuration ID provided')
+        # Check if we're in advanced mode with direct API key
+        if settings.llm_api_key and not settings.llm_configuration_id:
+            logger.info(f'Advanced mode: Using direct API key')
+            model = settings.llm_model or 'gpt-4o-mini'
+            api_key = settings.llm_api_key
+            base_url = settings.llm_base_url
+        elif settings.llm_configuration_id:
+            # Use LLM configuration
+            logger.info(f'Using LLM Configuration ID: {settings.llm_configuration_id}')
+            async with get_async_session_context() as db_session:
+                model, api_key, base_url = await LLMConfigurationResolver.resolve_llm_config(
+                    settings, _user_id, db_session
+                )
+            logger.info(f'Resolved from configuration:')
+            logger.info(f'  - model: {model}')
+            logger.info(f'  - base_url: {base_url}')
+            logger.info(f'  - api_key starts with: {str(api_key)[:10] if api_key else "None"}...')
+            logger.info(f'  - api_key source: LLM Configuration Table')
+        else:
+            # No configuration ID and no API key
+            logger.error(f'No LLM configuration ID or API key provided')
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     'status': 'error',
-                    'message': 'Please select an API key configuration',
+                    'message': 'Please select an API key configuration or provide an API key',
                 }
             )
-        
-        logger.info(f'Using LLM Configuration ID: {settings.llm_configuration_id}')
-        async with get_async_session_context() as db_session:
-            model, api_key, base_url = await LLMConfigurationResolver.resolve_llm_config(
-                settings, _user_id, db_session
-            )
-        logger.info(f'Resolved from configuration:')
-        logger.info(f'  - model: {model}')
-        logger.info(f'  - base_url: {base_url}')
-        logger.info(f'  - api_key starts with: {str(api_key)[:10] if api_key else "None"}...')
-        logger.info(f'  - api_key source: LLM Configuration Table ONLY')
         
         # Check if we have an API key
         if not api_key:

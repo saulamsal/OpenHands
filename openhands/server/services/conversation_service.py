@@ -64,7 +64,8 @@ async def create_new_conversation(
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,
         # but that would run a tiny inference.
-        if (
+        # Skip API key check if using LLM configuration (API key is in the configuration)
+        if not settings.llm_configuration_id and (
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):

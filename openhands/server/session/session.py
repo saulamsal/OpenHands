@@ -155,7 +155,7 @@ class Session:
                 default_llm_config.base_url = base_url
         else:
             # No configuration ID - cannot proceed
-            logger.error("No LLM configuration ID provided - cannot initialize LLM")
+            self.logger.error("No LLM configuration ID provided - cannot initialize LLM")
             default_llm_config.model = settings.llm_model or ''
             default_llm_config.api_key = None  # No API key without configuration
             default_llm_config.base_url = settings.llm_base_url

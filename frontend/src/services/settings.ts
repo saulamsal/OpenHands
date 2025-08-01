@@ -5,6 +5,7 @@ export const LATEST_SETTINGS_VERSION = 5;
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "anthropic/claude-sonnet-4-20250514",
   LLM_BASE_URL: "",
+  LLM_CONFIGURATION_ID: null,
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY_SET: false,

@@ -39,6 +39,7 @@ class GETSettingsModel(Settings):
     )
     llm_api_key_set: bool
     search_api_key_set: bool = False
+    IS_NEW_USER: bool = True  # Frontend uses this to show billing modal
 
     model_config = ConfigDict(use_enum_values=True)
 

@@ -46,12 +46,15 @@ class ServerConfig(ServerConfigInterface):
             'GITHUB_CLIENT_ID': self.github_client_id,
             'POSTHOG_CLIENT_KEY': self.posthog_client_key,
             'FEATURE_FLAGS': {
-                'ENABLE_BILLING': self.enable_billing,
+                # 'ENABLE_BILLING': self.enable_billing,
+                'ENABLE_BILLING': True,
                 'ENABLE_TEAMS': True,  # Always enable teams
                 'ENABLE_DATABASE_AUTH': True,  # Always enable database auth
                 'ENABLE_MULTI_TENANT': True,  # Always enable multi-tenant
-                'HIDE_LLM_SETTINGS': self.hide_llm_settings,
-                'HIDE_MICROAGENT_MANAGEMENT': self.hide_microagent_management,
+                # 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
+                # 'HIDE_MICROAGENT_MANAGEMENT': self.hide_microagent_management,
+                'HIDE_LLM_SETTINGS': False,
+                'HIDE_MICROAGENT_MANAGEMENT': False,
             },
             'PROVIDERS_CONFIGURED': ['github'],  # Always include GitHub as configured
             # APP_MODE removed - always assume SAAS/auth-based mode

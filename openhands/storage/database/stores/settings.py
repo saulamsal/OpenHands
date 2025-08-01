@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage.data_models.settings import Settings
-from openhands.storage.database.models import UserSettings
+from openhands.storage.database.models import UserSettings, LLMConfiguration
 from openhands.storage.settings.settings_store import SettingsStore
 
 
@@ -50,7 +50,29 @@ class DatabaseSettingsStore(SettingsStore):
             settings_dict = user_settings.settings
             if isinstance(settings_dict, str):
                 settings_dict = json.loads(settings_dict)
-            return Settings(**settings_dict)
+            settings = Settings(**settings_dict)
+            
+            # If no LLM configuration ID is set, try to use the default one
+            if not settings.llm_configuration_id:
+                logger.info(f"No LLM configuration ID set for user {self.user_id}, checking for default configuration")
+                
+                # Query for the user's default active LLM configuration
+                result = await self.db_session.execute(
+                    select(LLMConfiguration).where(
+                        LLMConfiguration.user_id == self.user_id,
+                        LLMConfiguration.is_default == True,
+                        LLMConfiguration.is_active == True
+                    )
+                )
+                default_config = result.scalar_one_or_none()
+                
+                if default_config:
+                    logger.info(f"Found default LLM configuration '{default_config.name}' (ID: {default_config.id}) for user {self.user_id}")
+                    settings.llm_configuration_id = str(default_config.id)
+                else:
+                    logger.info(f"No default LLM configuration found for user {self.user_id}")
+            
+            return settings
         except Exception as e:
             logger.error(f"Error loading settings for user {self.user_id}: {e}")
             return None

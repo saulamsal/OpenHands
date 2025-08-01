@@ -32,26 +32,23 @@ export function LLMConfigurationSelector({
 }: LLMConfigurationSelectorProps) {
   const { t } = useTranslation();
 
-  // Filter configurations based on provider if specified
-  const filteredConfigs = provider
-    ? configurations.filter((c) => c.provider === provider)
-    : configurations;
+  // Show all configurations, not filtered by provider
+  // This allows users to switch between different providers easily
+  const filteredConfigs = configurations;
 
-  // Auto-select default configuration when provider changes
+  // Auto-select default configuration on initial load
   useEffect(() => {
-    if (provider) {
-      const defaultConfig = filteredConfigs.find((c) => c.is_default);
-      if (defaultConfig && selectedConfigId !== defaultConfig.id) {
+    // Only auto-select if no configuration is currently selected
+    if (!selectedConfigId && configurations.length > 0) {
+      const defaultConfig = configurations.find((c) => c.is_default);
+      if (defaultConfig) {
         onConfigSelect(defaultConfig.id, defaultConfig);
-      } else if (
-        filteredConfigs.length === 1 &&
-        selectedConfigId !== filteredConfigs[0].id
-      ) {
-        // Auto-select if only one config for this provider
-        onConfigSelect(filteredConfigs[0].id, filteredConfigs[0]);
+      } else if (configurations.length === 1) {
+        // Auto-select if only one config exists
+        onConfigSelect(configurations[0].id, configurations[0]);
       }
     }
-  }, [provider, filteredConfigs, selectedConfigId, onConfigSelect]);
+  }, [configurations, selectedConfigId, onConfigSelect]);
 
   const selectedConfig = configurations.find((c) => c.id === selectedConfigId);
 
@@ -67,14 +64,17 @@ export function LLMConfigurationSelector({
             key: config.id,
             label: (
               <div className="flex items-center justify-between w-full">
-                <span>
-                  {config.name}
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{config.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({config.provider})
+                  </span>
                   {config.is_default && (
-                    <span className="ml-2 text-xs text-green-600">
-                      (Default)
+                    <span className="ml-1 text-xs text-green-600">
+                      • Default
                     </span>
                   )}
-                </span>
+                </div>
                 {config.test_status === "success" && (
                   <Check className="w-4 h-4 text-green-500" />
                 )}
@@ -125,6 +125,10 @@ export function LLMConfigurationSelector({
                 )}
               </div>
               <div className="text-xs text-muted-foreground">
+                Provider: {selectedConfig.provider} • Model:{" "}
+                {selectedConfig.model}
+              </div>
+              <div className="text-xs text-muted-foreground">
                 API Key: {selectedConfig.api_key_masked}
               </div>
               {selectedConfig.test_status && (
@@ -160,11 +164,10 @@ export function LLMConfigurationSelector({
       )}
 
       {/* No Configuration Message */}
-      {filteredConfigs.length === 0 && provider && (
+      {filteredConfigs.length === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-[680px]">
           <p className="text-sm text-yellow-800">
-            No API keys configured for {provider}. Click "Add New API Key" to
-            get started.
+            No API keys configured. Click "Add New API Key" to get started.
           </p>
         </div>
       )}

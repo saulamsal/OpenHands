@@ -46,6 +46,7 @@ class Settings(BaseModel):
     max_budget_per_task: float | None = None
     email: str | None = None
     email_verified: bool | None = None
+    has_completed_billing_setup: bool = False  # Track if user has set up billing
 
     model_config = ConfigDict(
         validate_assignment=True,

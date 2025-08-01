@@ -93,6 +93,17 @@ function LlmSettingsScreen() {
     }
   }, [settings?.LLM_MODEL, settings?.LLM_CONFIGURATION_ID]);
 
+  // Validate selected configuration ID exists
+  React.useEffect(() => {
+    if (selectedConfigId && configurations) {
+      const configExists = configurations.some(c => c.id === selectedConfigId);
+      if (!configExists) {
+        console.warn(`Configuration ID ${selectedConfigId} not found, resetting`);
+        setSelectedConfigId(null);
+      }
+    }
+  }, [selectedConfigId, configurations]);
+
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
   );
@@ -154,11 +165,16 @@ function LlmSettingsScreen() {
 
     const fullLlmModel = provider && model && `${provider}/${model}`;
 
+    // Validate configuration ID exists before saving
+    const validConfigId = selectedConfigId && configurations?.some(c => c.id === selectedConfigId) 
+      ? selectedConfigId 
+      : null;
+
     saveSettings(
       {
         LLM_MODEL: fullLlmModel,
         // Use the selected configuration ID instead of raw API key
-        llm_configuration_id: selectedConfigId,
+        llm_configuration_id: validConfigId,
         llm_api_key: null, // Don't send API key when using configuration
         SEARCH_API_KEY: searchApiKey || "",
 
@@ -232,7 +248,8 @@ function LlmSettingsScreen() {
   const handleModelIsDirty = (model: string | null) => {
     // openai providers are special case; see ModelSelector
     // component for details
-    const modelIsDirty = model !== settings?.LLM_MODEL.replace("openai/", "");
+    const currentModel = settings?.LLM_MODEL || "";
+    const modelIsDirty = model !== currentModel.replace("openai/", "");
     setDirtyInputs((prev) => ({
       ...prev,
       model: modelIsDirty,
@@ -324,7 +341,7 @@ function LlmSettingsScreen() {
     console.log("=== TEST LLM CLICKED ===");
     console.log("View:", view);
     console.log("Selected Config ID:", selectedConfigId);
-    
+
     // Get current form values
     const model =
       view === "basic"
@@ -360,15 +377,25 @@ function LlmSettingsScreen() {
 
     // If in basic mode and using configuration, send configuration ID
     if (view === "basic" && selectedConfigId) {
-      testSettings.llm_configuration_id = selectedConfigId;
-      console.log("Sending configuration ID:", selectedConfigId);
-      // Don't send API key when using configuration
+      // Validate the configuration exists before sending
+      const configExists = configurations?.some(c => c.id === selectedConfigId);
+      if (configExists) {
+        testSettings.llm_configuration_id = selectedConfigId;
+        console.log("Sending configuration ID:", selectedConfigId);
+        // Don't send API key when using configuration
+      } else {
+        displayErrorToast("Please select a valid API key configuration");
+        return;
+      }
     } else if (apiKey) {
       // Only include API key if user entered a new one in advanced mode
       testSettings.llm_api_key = apiKey;
       console.log("Sending API key (advanced mode)");
+    } else if (view === "basic" && !selectedConfigId) {
+      displayErrorToast("Please select an API key configuration");
+      return;
     }
-    
+
     console.log("Test settings being sent:", testSettings);
 
     testLlm(testSettings, {
@@ -447,7 +474,11 @@ function LlmSettingsScreen() {
                 <>
                   <ModelSelector
                     models={modelsAndProviders}
-                    currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
+                    currentModel={
+                      currentSelectedModel ||
+                      settings.LLM_MODEL ||
+                      DEFAULT_OPENHANDS_MODEL
+                    }
                     onChange={handleModelIsDirty}
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
@@ -472,6 +503,12 @@ function LlmSettingsScreen() {
                   if (config) {
                     // Update the form to reflect the selected configuration
                     handleApiKeyIsDirty("configured");
+                    // Update the selected model to match the configuration
+                    const fullModel = `${config.provider}/${config.model}`;
+                    setCurrentSelectedModel(fullModel);
+                    handleModelIsDirty(fullModel);
+                    // Update the provider
+                    setSelectedProvider(config.provider);
                   }
                 }}
                 onAddNew={() => setIsAddModalOpen(true)}
