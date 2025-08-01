@@ -145,7 +145,7 @@ class Session:
                         settings, self.user_id, db_session
                     )
             
-            model, api_key, base_url = asyncio.run(resolve_config())
+            model, api_key, base_url = await resolve_config()
             if model:
                 default_llm_config.model = model
             if api_key:

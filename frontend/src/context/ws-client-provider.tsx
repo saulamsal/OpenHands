@@ -310,12 +310,16 @@ export function WsClientProvider({
     setWebSocketStatus("CONNECTING");
 
     const lastEvent = lastEventRef.current;
-    const query = {
+    const query: any = {
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
       providers_set: providers,
-      session_api_key: conversation.session_api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
+    
+    // Only add session_api_key if it exists
+    if (conversation.session_api_key) {
+      query.session_api_key = conversation.session_api_key;
+    }
 
     let baseUrl = null;
     if (conversation.url && !conversation.url.startsWith("/")) {

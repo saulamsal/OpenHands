@@ -46,27 +46,73 @@ class ConversationValidator:
             ConversationStore,
             server_config.conversation_store_class,
         )
-        conversation_store = await conversation_store_class.get_instance(
-            config, user_id
-        )
-
-        try:
-            metadata = await conversation_store.get_metadata(conversation_id)
-        except FileNotFoundError:
-            logger.info(
-                f'Creating new conversation metadata for {conversation_id}',
-                extra={'session_id': conversation_id},
-            )
-            await conversation_store.save_metadata(
-                ConversationMetadata(
-                    conversation_id=conversation_id,
-                    user_id=user_id,
-                    title=get_default_conversation_title(conversation_id),
-                    last_updated_at=datetime.now(timezone.utc),
-                    selected_repository=None,
+        # For database stores, we need to handle the case where WebSocket connects
+        # before all database transactions are committed
+        from openhands.storage.database.stores.conversation import ConversationStore as DatabaseConversationStore
+        
+        if issubclass(conversation_store_class, DatabaseConversationStore):
+            # Use a new database session to ensure we get the latest data
+            from openhands.storage.database.session import get_async_session_context
+            async with get_async_session_context() as db_session:
+                # First, try to find the conversation without user_id constraint
+                # This handles the case where WebSocket connects before user_id is properly set
+                from sqlalchemy import select
+                from openhands.storage.database.models import ConversationDB
+                
+                result = await db_session.execute(
+                    select(ConversationDB).where(
+                        ConversationDB.conversation_id == conversation_id
+                    )
                 )
+                conv_db = result.scalar_one_or_none()
+                
+                if conv_db is None:
+                    logger.warning(
+                        f'Conversation {conversation_id} not found in database during WebSocket connect',
+                        extra={'session_id': conversation_id, 'user_id': user_id},
+                    )
+                    raise FileNotFoundError(f"Conversation {conversation_id} not found")
+                
+                # Use the conversation's actual user_id
+                actual_user_id = str(conv_db.user_id) if conv_db.user_id else user_id
+                logger.info(
+                    f'Found conversation {conversation_id} with user_id {actual_user_id}',
+                    extra={'session_id': conversation_id},
+                )
+                
+                conversation_store = await conversation_store_class.get_instance(
+                    config, actual_user_id, db_session
+                )
+                try:
+                    metadata = await conversation_store.get_metadata(conversation_id)
+                except FileNotFoundError:
+                    logger.error(
+                        f'Conversation {conversation_id} not found for user {actual_user_id} during WebSocket connect',
+                        extra={'session_id': conversation_id, 'user_id': actual_user_id},
+                    )
+                    raise
+        else:
+            # For file-based stores, use the original logic
+            conversation_store = await conversation_store_class.get_instance(
+                config, user_id
             )
-            metadata = await conversation_store.get_metadata(conversation_id)
+            try:
+                metadata = await conversation_store.get_metadata(conversation_id)
+            except FileNotFoundError:
+                logger.info(
+                    f'Creating new conversation metadata for {conversation_id}',
+                    extra={'session_id': conversation_id},
+                )
+                await conversation_store.save_metadata(
+                    ConversationMetadata(
+                        conversation_id=conversation_id,
+                        user_id=user_id,
+                        title=get_default_conversation_title(conversation_id),
+                        last_updated_at=datetime.now(timezone.utc),
+                        selected_repository=None,
+                    )
+                )
+                metadata = await conversation_store.get_metadata(conversation_id)
         return metadata
 
 
