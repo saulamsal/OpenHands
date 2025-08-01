@@ -25,11 +25,13 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
+import { useTestLlm } from "#/hooks/mutation/use-test-llm";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
+  const { mutate: testLlm, isPending: isTestingLlm } = useTestLlm();
 
   const { data: resources } = useAIConfigOptions();
   const { data: settings, isLoading, isFetching } = useSettings();
@@ -274,6 +276,50 @@ function LlmSettingsScreen() {
 
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
 
+  const handleTestLlm = () => {
+    // Get current form values
+    const model =
+      view === "basic"
+        ? currentSelectedModel || settings?.LLM_MODEL || DEFAULT_OPENHANDS_MODEL
+        : currentSelectedModel ||
+          settings?.LLM_MODEL ||
+          DEFAULT_OPENHANDS_MODEL;
+
+    // Get API key from form input if available
+    const apiKeyInput = document.querySelector('input[name="llm-api-key-input"]') as HTMLInputElement;
+    // Only send API key if user has typed something new, otherwise let backend use saved key
+    const apiKey = apiKeyInput?.value && apiKeyInput.value.length > 0 ? apiKeyInput.value : null;
+    
+    // Get base URL from form input if in advanced mode
+    const baseUrlInput = document.querySelector('input[name="base-url-input"]') as HTMLInputElement;
+    const baseUrl = view === "advanced" ? (baseUrlInput?.value || settings?.LLM_BASE_URL) : DEFAULT_SETTINGS.LLM_BASE_URL;
+
+    // Prepare test settings with correct field names
+    // Don't send API key if it's empty - backend will use saved one
+    const testSettings: any = {
+      llm_model: model,
+      llm_base_url: baseUrl,
+    };
+    
+    // Only include API key if user entered a new one
+    if (apiKey) {
+      testSettings.llm_api_key = apiKey;
+    }
+
+    testLlm(testSettings, {
+      onSuccess: (data) => {
+        displaySuccessToast(
+          data.message || t(I18nKey.SETTINGS$LLM_TEST_SUCCESS),
+        );
+      },
+      onError: (error) => {
+        const errorMessage =
+          error.response?.data?.message || t(I18nKey.ERROR$GENERIC);
+        displayErrorToast(errorMessage);
+      },
+    });
+  };
+
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
   return (
@@ -283,14 +329,36 @@ function LlmSettingsScreen() {
         className="flex flex-col h-full justify-between"
       >
         <div className="p-9 flex flex-col gap-6">
-          <SettingsSwitch
-            testId="advanced-settings-switch"
-            defaultIsToggled={view === "advanced"}
-            onToggle={handleToggleAdvancedSettings}
-            isToggled={view === "advanced"}
-          >
-            {t(I18nKey.SETTINGS$ADVANCED)}
-          </SettingsSwitch>
+          <div className="flex items-center justify-between">
+            <SettingsSwitch
+              testId="advanced-settings-switch"
+              defaultIsToggled={view === "advanced"}
+              onToggle={handleToggleAdvancedSettings}
+              isToggled={view === "advanced"}
+            >
+              {t(I18nKey.SETTINGS$ADVANCED)}
+            </SettingsSwitch>
+
+            <BrandButton
+              testId="test-llm-button"
+              type="button"
+              variant="secondary"
+              size="small"
+              onClick={handleTestLlm}
+              isDisabled={isTestingLlm}
+            >
+              {isTestingLlm ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⚡</span>
+                  {t(I18nKey.SETTINGS$TESTING)}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  ⚡ {t(I18nKey.SETTINGS$TEST_LLM)}
+                </span>
+              )}
+            </BrandButton>
+          </div>
 
           {view === "basic" && (
             <div

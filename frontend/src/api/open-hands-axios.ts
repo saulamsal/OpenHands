@@ -8,7 +8,7 @@ const getBaseURL = () => {
   if (!import.meta.env.VITE_BACKEND_BASE_URL) {
     return "";
   }
-  
+
   if (typeof window !== "undefined") {
     return `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL}`;
   }
@@ -71,7 +71,13 @@ const getCSRFToken = (): string | null => {
   return null;
 };
 
-// Set up request interceptor for CSRF token
+// Helper function to get active team ID from localStorage
+const getActiveTeamId = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("activeTeamId");
+};
+
+// Set up request interceptor for CSRF token and team ID
 openHands.interceptors.request.use((config) => {
   // Add CSRF token to headers for state-changing requests
   const method = config.method?.toUpperCase();
@@ -82,6 +88,14 @@ openHands.interceptors.request.use((config) => {
       config.headers["X-CSRF-Token"] = csrfToken;
     }
   }
+
+  // Add team ID to headers for all requests
+  const teamId = getActiveTeamId();
+  if (teamId) {
+    // eslint-disable-next-line no-param-reassign
+    config.headers["X-Team-Id"] = teamId;
+  }
+
   return config;
 });
 
@@ -97,18 +111,18 @@ openHands.interceptors.response.use(
     if (error.response?.status === 401) {
       // Check if this is a Git provider token error (not a general auth error)
       const errorMessage = error.response?.data as string;
-      const isGitProviderError = 
-        typeof errorMessage === "string" && 
-        (errorMessage.includes("Git provider token required") || 
-         errorMessage.includes("GitHub token required") ||
-         errorMessage.includes("GitLab token required") ||
-         errorMessage.includes("Bitbucket token required"));
-      
+      const isGitProviderError =
+        typeof errorMessage === "string" &&
+        (errorMessage.includes("Git provider token required") ||
+          errorMessage.includes("GitHub token required") ||
+          errorMessage.includes("GitLab token required") ||
+          errorMessage.includes("Bitbucket token required"));
+
       // Don't redirect for Git provider token errors
       if (isGitProviderError) {
         return Promise.reject(error);
       }
-      
+
       // Don't redirect if we're already redirecting (prevents loops)
       if (isRedirecting) {
         return Promise.reject(error);

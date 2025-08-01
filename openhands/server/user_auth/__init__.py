@@ -54,3 +54,8 @@ async def get_user_settings_store(request: Request) -> SettingsStore | None:
 async def get_auth_type(request: Request) -> AuthType | None:
     user_auth = await get_user_auth(request)
     return user_auth.get_auth_type()
+
+
+async def get_team_id(request: Request) -> str | None:
+    """Get the team ID from the X-Team-Id header"""
+    return request.headers.get('X-Team-Id')

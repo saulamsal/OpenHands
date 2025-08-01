@@ -44,6 +44,7 @@ async def create_new_conversation(
     attach_convo_id: bool = False,
     git_provider: ProviderType | None = None,
     conversation_id: str | None = None,
+    team_id: str | None = None,
 ) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
@@ -119,6 +120,7 @@ async def create_new_conversation(
                 conversation_id=conversation_id,
                 title=conversation_title,
                 user_id=user_id,
+                team_id=team_id,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 git_provider=git_provider,

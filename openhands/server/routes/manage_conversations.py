@@ -60,6 +60,7 @@ from openhands.server.user_auth import (
     get_user_secrets,
     get_user_settings,
     get_user_settings_store,
+    get_team_id,
 )
 from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation as get_conversation_object
@@ -91,6 +92,7 @@ class InitSessionRequest(BaseModel):
     suggested_task: SuggestedTask | None = None
     create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
+    team_id: str | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -114,6 +116,7 @@ async def new_conversation(
     data: InitSessionRequest,
     _auth_user_id: Optional[str] = Depends(require_auth),
     user_id: str = Depends(get_user_id),
+    team_id_from_header: str | None = Depends(get_team_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
@@ -184,6 +187,7 @@ async def new_conversation(
             conversation_instructions=conversation_instructions,
             git_provider=git_provider,
             conversation_id=conversation_id,
+            team_id=team_id_from_header or data.team_id,
         )
 
         # Return the conversation response
@@ -231,6 +235,7 @@ async def search_conversations(
     conversation_trigger: ConversationTrigger | None = None,
     _auth_user_id: Optional[str] = Depends(require_auth),
     user_id: str = Depends(get_user_id),
+    team_id: str | None = Depends(get_team_id),
     db_session: AsyncSession = Depends(get_async_session),
 ) -> ConversationInfoResultSet:
     # Create conversation store with injected session
@@ -267,6 +272,10 @@ async def search_conversations(
             conversation_trigger is not None
             and conversation.trigger != conversation_trigger
         ):
+            continue
+
+        # Apply team filter
+        if team_id is not None and conversation.team_id != team_id:
             continue
 
         filtered_results.append(conversation)

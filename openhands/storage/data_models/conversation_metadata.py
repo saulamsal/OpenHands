@@ -19,6 +19,7 @@ class ConversationMetadata:
     conversation_id: str
     selected_repository: str | None
     user_id: str | None = None
+    team_id: str | None = None
     selected_branch: str | None = None
     git_provider: ProviderType | None = None
     title: str | None = None

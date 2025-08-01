@@ -24,6 +24,7 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
+from openhands.llm import LLM
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
@@ -200,3 +201,115 @@ def convert_to_settings(settings_with_token_data: Settings) -> Settings:
     # Create a new Settings instance
     settings = Settings(**filtered_settings_data)
     return settings
+
+
+@app.post(
+    '/settings/test-llm',
+    response_model=None,
+    responses={
+        200: {'description': 'LLM test successful', 'model': dict},
+        400: {'description': 'Invalid settings', 'model': dict},
+        500: {'description': 'Test failed', 'model': dict},
+    },
+)
+async def test_llm_settings(
+    settings: Settings,
+    _user_id: Optional[str] = Depends(require_auth),
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    """Test LLM configuration by making a simple API call."""
+    try:
+        # Log the incoming request data
+        logger.info(f'Received test request: llm_model={settings.llm_model}, llm_base_url={settings.llm_base_url}, has_api_key={bool(settings.llm_api_key)}')
+        
+        # Load existing settings to get API key if not provided
+        existing_settings = await settings_store.load()
+        
+        from openhands.core.config import LLMConfig
+        
+        # Use provided API key if available, otherwise use existing one
+        api_key = settings.llm_api_key
+        if not api_key and existing_settings:
+            api_key = existing_settings.llm_api_key
+            
+        # Check if we have an API key
+        if not api_key:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    'status': 'error',
+                    'message': 'No API key provided or saved',
+                }
+            )
+        
+        model = settings.llm_model or (existing_settings.llm_model if existing_settings else 'gpt-4o-mini')
+        base_url = settings.llm_base_url or (existing_settings.llm_base_url if existing_settings else None)
+        
+        # Log the test parameters (but not the full API key for security)
+        logger.info(f'Testing LLM with model: {model}, base_url: {base_url}, api_key length: {len(str(api_key)) if api_key else 0}')
+        logger.info(f'API key starts with: {str(api_key)[:10] if api_key else "None"}...')
+        
+        # Create LLM config from settings
+        llm_config = LLMConfig(
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=0.7,
+            max_output_tokens=100,  # Small token limit for test
+        )
+        
+        # Initialize LLM
+        llm = LLM(llm_config)
+        
+        # Make a simple test call
+        test_messages = [
+            {'role': 'system', 'content': 'You are a helpful assistant. Respond with exactly: "LLM connection successful"'},
+            {'role': 'user', 'content': 'Test message'}
+        ]
+        
+        response = llm.completion(messages=test_messages)
+        
+        # Check if we got a valid response
+        if response and response.choices and len(response.choices) > 0:
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={
+                    'status': 'success',
+                    'message': 'LLM configuration is valid',
+                    'model': settings.llm_model or 'gpt-4o-mini',
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={
+                    'status': 'error',
+                    'message': 'LLM returned an invalid response',
+                }
+            )
+            
+    except Exception as e:
+        logger.error(f'LLM test failed: {str(e)}')
+        
+        # Extract user-friendly error message
+        error_message = str(e)
+        if 'AuthenticationError' in error_message or 'Invalid API key' in error_message:
+            error_message = 'Invalid API key'
+        elif 'Connection' in error_message or 'Network' in error_message:
+            error_message = 'Connection error - please check your network'
+        elif 'rate limit' in error_message.lower():
+            error_message = 'Rate limit exceeded - please try again later'
+        elif 'model' in error_message.lower() and 'not found' in error_message.lower():
+            error_message = 'Model not found - please check the model name'
+        else:
+            # Keep the original error but truncate if too long
+            if len(error_message) > 200:
+                error_message = error_message[:200] + '...'
+        
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                'status': 'error',
+                'message': f'LLM test failed: {error_message}',
+            }
+        )

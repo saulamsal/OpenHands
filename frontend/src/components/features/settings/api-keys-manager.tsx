@@ -218,9 +218,11 @@ export function ApiKeysManager() {
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
 
   // Display error toast if the query fails
-  if (error) {
-    displayErrorToast(t(I18nKey.ERROR$GENERIC));
-  }
+  React.useEffect(() => {
+    if (error) {
+      displayErrorToast(t(I18nKey.ERROR$GENERIC));
+    }
+  }, [error, t]);
 
   const handleKeyCreated = (newKey: CreateApiKeyResponse) => {
     setNewlyCreatedKey(newKey);

@@ -4,6 +4,7 @@ import OpenHands from "#/api/open-hands";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { Provider } from "#/types/settings";
 import { CreateMicroagent } from "#/api/open-hands.types";
+import { useAuth } from "#/context/auth-context";
 
 interface CreateConversationVariables {
   query?: string;
@@ -19,6 +20,7 @@ interface CreateConversationVariables {
 
 export const useCreateConversation = () => {
   const queryClient = useQueryClient();
+  const { activeTeam } = useAuth();
 
   return useMutation({
     mutationKey: ["create-conversation"],

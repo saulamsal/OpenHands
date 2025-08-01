@@ -8,11 +8,9 @@ import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-b
 import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
-import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
+import { ConversationsButton } from "#/components/shared/buttons/conversations-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettings } from "#/hooks/query/use-settings";
-import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -36,8 +34,6 @@ export function EnhancedSidebar() {
   const { mutate: logout } = useLogout();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
-  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
-    React.useState(false);
   const [showCreateTeamModal, setShowCreateTeamModal] = React.useState(false);
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
@@ -101,13 +97,7 @@ export function EnhancedSidebar() {
               </div>
             )}
             <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
-            <ConversationPanelButton
-              isOpen={conversationPanelIsOpen}
-              onClick={() =>
-                settings?.EMAIL_VERIFIED === false
-                  ? null
-                  : setConversationPanelIsOpen((prev) => !prev)
-              }
+            <ConversationsButton
               disabled={settings?.EMAIL_VERIFIED === false}
             />
             {!shouldHideMicroagentManagement && (
@@ -133,14 +123,6 @@ export function EnhancedSidebar() {
             />
           </div>
         </nav>
-
-        {conversationPanelIsOpen && (
-          <ConversationPanelWrapper isOpen={conversationPanelIsOpen}>
-            <ConversationPanel
-              onClose={() => setConversationPanelIsOpen(false)}
-            />
-          </ConversationPanelWrapper>
-        )}
       </aside>
 
       {settingsModalIsOpen && (
