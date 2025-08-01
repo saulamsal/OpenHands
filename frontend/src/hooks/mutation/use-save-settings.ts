@@ -9,6 +9,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
+    llm_configuration_id: settings.llm_configuration_id,
     agent: settings.AGENT || DEFAULT_SETTINGS.AGENT,
     language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,

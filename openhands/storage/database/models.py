@@ -20,6 +20,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -347,3 +348,48 @@ class CSRFToken(Base):
     def is_valid(self) -> bool:
         """Check if the CSRF token is valid for use."""
         return not self.used and not self.is_expired
+
+
+class LLMConfiguration(Base):
+    """LLM configuration model for storing multiple LLM API keys per user."""
+    __tablename__ = 'llm_configurations'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    
+    # Configuration details
+    name = Column(String(255), nullable=False)
+    provider = Column(String(50), nullable=False)  # openai, anthropic, gemini, openrouter
+    model = Column(String(255), nullable=False)  # gpt-4o, claude-3.5-sonnet, etc.
+    api_key_encrypted = Column(Text, nullable=False)  # AES-256 encrypted
+    base_url = Column(String(500), nullable=True)  # Optional custom endpoint
+    
+    # Status and settings
+    is_default = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    
+    # Usage tracking
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Test results
+    test_status = Column(String(50), nullable=True)  # success, failed, untested
+    test_message = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationships
+    user = relationship('User', backref='llm_configurations')
+    
+    # Indexes and constraints
+    __table_args__ = (
+        Index('idx_llm_configs_user_id', 'user_id'),
+        Index('idx_llm_configs_provider', 'provider'),
+        Index(
+            'unique_user_default',
+            'user_id', 'is_default',
+            unique=True,
+            postgresql_where=text('is_default = true')
+        ),
+    )

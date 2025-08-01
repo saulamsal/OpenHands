@@ -35,6 +35,7 @@ from openhands.server.routes.auth import app as auth_router
 from openhands.server.routes.teams import app as teams_router
 from openhands.server.routes.session import app as session_router
 from openhands.server.routes.api_keys import app as api_keys_router
+from openhands.server.routes.llm_configurations import app as llm_configurations_router
 
 mcp_app = mcp_server.http_app(path='/mcp')
 
@@ -97,4 +98,5 @@ app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
 app.include_router(api_keys_router)
+app.include_router(llm_configurations_router)
 add_health_endpoints(app)

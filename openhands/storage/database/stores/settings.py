@@ -69,7 +69,10 @@ class DatabaseSettingsStore(SettingsStore):
         user_settings = result.scalar_one_or_none()
         
         # Convert settings to dict
-        settings_dict = settings.model_dump(exclude_none=True)
+        settings_dict = settings.model_dump(
+            exclude_none=True,
+            context={'expose_secrets': True}  # Prevents SecretStr masking
+        )
         
         if user_settings is None:
             # Create new settings record

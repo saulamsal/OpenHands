@@ -132,9 +132,33 @@ class Session:
         # persist if we retrieve the default LLM config again when constructing
         # the agent
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = settings.llm_model or ''
-        default_llm_config.api_key = settings.llm_api_key
-        default_llm_config.base_url = settings.llm_base_url
+        
+        # ONLY use LLMConfigurationResolver - no legacy fallback
+        if settings.llm_configuration_id:
+            from openhands.llm.llm_configuration_resolver import LLMConfigurationResolver
+            from openhands.storage.database.session import get_async_session_context
+            import asyncio
+            
+            async def resolve_config():
+                async with get_async_session_context() as db_session:
+                    return await LLMConfigurationResolver.resolve_llm_config(
+                        settings, self.user_id, db_session
+                    )
+            
+            model, api_key, base_url = asyncio.run(resolve_config())
+            if model:
+                default_llm_config.model = model
+            if api_key:
+                from pydantic import SecretStr
+                default_llm_config.api_key = SecretStr(api_key)
+            if base_url:
+                default_llm_config.base_url = base_url
+        else:
+            # No configuration ID - cannot proceed
+            logger.error("No LLM configuration ID provided - cannot initialize LLM")
+            default_llm_config.model = settings.llm_model or ''
+            default_llm_config.api_key = None  # No API key without configuration
+            default_llm_config.base_url = settings.llm_base_url
         self.config.search_api_key = settings.search_api_key
         if settings.sandbox_api_key:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()

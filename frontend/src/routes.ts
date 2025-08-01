@@ -14,6 +14,7 @@ export default [
     route("accept-tos", "routes/accept-tos.tsx"),
     route("settings", "routes/settings.tsx", [
       index("routes/llm-settings.tsx"),
+      route("llm/configurations", "routes/llm-configurations.tsx"),
       route("mcp", "routes/mcp-settings.tsx"),
       route("user", "routes/user-settings.tsx"),
       route("account", "routes/account-settings.tsx"),

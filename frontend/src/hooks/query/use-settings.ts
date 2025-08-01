@@ -13,6 +13,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
   return {
     LLM_MODEL: apiSettings.llm_model,
     LLM_BASE_URL: apiSettings.llm_base_url,
+    LLM_CONFIGURATION_ID: apiSettings.llm_configuration_id,
     AGENT: apiSettings.agent,
     LANGUAGE: apiSettings.language,
     CONFIRMATION_MODE: apiSettings.confirmation_mode,

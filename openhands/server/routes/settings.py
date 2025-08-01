@@ -116,19 +116,32 @@ async def store_llm_settings(
     settings: Settings, settings_store: SettingsStore
 ) -> Settings:
     existing_settings = await settings_store.load()
+    
+    logger.info(f"store_llm_settings: Processing settings update")
+    logger.info(f"  - incoming llm_configuration_id: {settings.llm_configuration_id}")
+    logger.info(f"  - incoming has_api_key: {bool(settings.llm_api_key)}")
 
     # Convert to Settings model and merge with existing settings
     if existing_settings:
-        # Keep existing LLM settings if not provided
-        if settings.llm_api_key is None:
-            settings.llm_api_key = existing_settings.llm_api_key
+        logger.info(f"  - existing has_api_key: {bool(existing_settings.llm_api_key)}")
+        logger.info(f"  - existing llm_configuration_id: {existing_settings.llm_configuration_id}")
+        
+        # ALWAYS clear the API key - we only use configurations now
+        logger.info(f"  - ALWAYS CLEARING API KEY - configurations only")
+        settings.llm_api_key = None
+                
         if settings.llm_model is None:
             settings.llm_model = existing_settings.llm_model
         if settings.llm_base_url is None:
             settings.llm_base_url = existing_settings.llm_base_url
+        if settings.llm_configuration_id is None:
+            settings.llm_configuration_id = existing_settings.llm_configuration_id
         # Keep existing search API key if not provided
         if settings.search_api_key is None:
             settings.search_api_key = existing_settings.search_api_key
+    
+    logger.info(f"  - final has_api_key: {bool(settings.llm_api_key)}")
+    logger.info(f"  - final llm_configuration_id: {settings.llm_configuration_id}")
 
     return settings
 
@@ -220,20 +233,51 @@ async def test_llm_settings(
     """Test LLM configuration by making a simple API call."""
     try:
         # Log the incoming request data
-        logger.info(f'Received test request: llm_model={settings.llm_model}, llm_base_url={settings.llm_base_url}, has_api_key={bool(settings.llm_api_key)}')
+        logger.info(f'===== LLM TEST START =====')
+        logger.info(f'User ID: {_user_id}')
+        logger.info(f'Received test request:')
+        logger.info(f'  - llm_model: {settings.llm_model}')
+        logger.info(f'  - llm_base_url: {settings.llm_base_url}')
+        logger.info(f'  - has_api_key: {bool(settings.llm_api_key)}')
+        logger.info(f'  - llm_configuration_id: {settings.llm_configuration_id}')
         
         # Load existing settings to get API key if not provided
         existing_settings = await settings_store.load()
+        if existing_settings:
+            logger.info(f'Existing settings loaded:')
+            logger.info(f'  - has stored API key: {bool(existing_settings.llm_api_key)}')
+            if existing_settings.llm_api_key:
+                logger.info(f'  - stored API key starts with: {str(existing_settings.llm_api_key)[:10]}...')
         
-        from openhands.core.config import LLMConfig
+        from openhands.core.config.llm_config import LLMConfig
+        from openhands.llm.llm_configuration_resolver import LLMConfigurationResolver
+        from openhands.storage.database.session import get_async_session_context
         
-        # Use provided API key if available, otherwise use existing one
-        api_key = settings.llm_api_key
-        if not api_key and existing_settings:
-            api_key = existing_settings.llm_api_key
-            
+        # ONLY use LLM configurations - no legacy fallback
+        if not settings.llm_configuration_id:
+            logger.error(f'No LLM configuration ID provided')
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    'status': 'error',
+                    'message': 'Please select an API key configuration',
+                }
+            )
+        
+        logger.info(f'Using LLM Configuration ID: {settings.llm_configuration_id}')
+        async with get_async_session_context() as db_session:
+            model, api_key, base_url = await LLMConfigurationResolver.resolve_llm_config(
+                settings, _user_id, db_session
+            )
+        logger.info(f'Resolved from configuration:')
+        logger.info(f'  - model: {model}')
+        logger.info(f'  - base_url: {base_url}')
+        logger.info(f'  - api_key starts with: {str(api_key)[:10] if api_key else "None"}...')
+        logger.info(f'  - api_key source: LLM Configuration Table ONLY')
+        
         # Check if we have an API key
         if not api_key:
+            logger.error(f'No API key found in either configuration or settings')
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -242,12 +286,12 @@ async def test_llm_settings(
                 }
             )
         
-        model = settings.llm_model or (existing_settings.llm_model if existing_settings else 'gpt-4o-mini')
-        base_url = settings.llm_base_url or (existing_settings.llm_base_url if existing_settings else None)
-        
         # Log the test parameters (but not the full API key for security)
-        logger.info(f'Testing LLM with model: {model}, base_url: {base_url}, api_key length: {len(str(api_key)) if api_key else 0}')
-        logger.info(f'API key starts with: {str(api_key)[:10] if api_key else "None"}...')
+        logger.info(f'Final test parameters:')
+        logger.info(f'  - model: {model}')
+        logger.info(f'  - base_url: {base_url}')
+        logger.info(f'  - api_key length: {len(str(api_key)) if api_key else 0}')
+        logger.info(f'  - api_key starts with: {str(api_key)[:10] if api_key else "None"}...')
         
         # Create LLM config from settings
         llm_config = LLMConfig(

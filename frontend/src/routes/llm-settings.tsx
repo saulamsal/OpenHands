@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
+import { Link } from "react-router";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
@@ -12,6 +13,13 @@ import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { BrandButton } from "#/components/features/settings/brand-button";
+import { useLLMConfigurationsDropdown } from "#/hooks/query/use-llm-configurations-dropdown";
+import { useDeleteLLMConfiguration } from "#/hooks/mutation/use-delete-llm-configuration";
+import { AddLLMConfigurationModal } from "#/components/add-llm-configuration-modal";
+import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
+import { LLMConfiguration } from "#/api/llm-configurations";
+import { LLMConfigurationSelector } from "#/components/llm-configuration-selector";
+import { useSetDefaultLLMConfiguration } from "#/hooks/mutation/use-set-default-llm-configuration";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -41,6 +49,22 @@ function LlmSettingsScreen() {
   const [securityAnalyzerInputIsVisible, setSecurityAnalyzerInputIsVisible] =
     React.useState(false);
 
+  // LLM Configuration state
+  const [selectedConfigId, setSelectedConfigId] = React.useState<string | null>(
+    settings?.LLM_CONFIGURATION_ID || null,
+  );
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [deletingConfig, setDeletingConfig] =
+    React.useState<LLMConfiguration | null>(null);
+  const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
+    null,
+  );
+
+  // Fetch configurations
+  const { data: configurations } = useLLMConfigurationsDropdown();
+  const deleteConfig = useDeleteLLMConfiguration();
+  const setDefaultConfig = useSetDefaultLLMConfiguration();
+
   const [dirtyInputs, setDirtyInputs] = React.useState({
     model: false,
     apiKey: false,
@@ -56,6 +80,18 @@ function LlmSettingsScreen() {
   const [currentSelectedModel, setCurrentSelectedModel] = React.useState<
     string | null
   >(null);
+
+  // Extract provider from current model and initialize configuration
+  React.useEffect(() => {
+    if (settings?.LLM_MODEL) {
+      const [provider] = settings.LLM_MODEL.split("/");
+      setSelectedProvider(provider);
+    }
+    // Initialize selected configuration ID from settings
+    if (settings?.LLM_CONFIGURATION_ID && !selectedConfigId) {
+      setSelectedConfigId(settings.LLM_CONFIGURATION_ID);
+    }
+  }, [settings?.LLM_MODEL, settings?.LLM_CONFIGURATION_ID]);
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
@@ -114,7 +150,6 @@ function LlmSettingsScreen() {
       ? getProviderId(providerDisplay)
       : undefined;
     const model = formData.get("llm-model-input")?.toString();
-    const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
 
     const fullLlmModel = provider && model && `${provider}/${model}`;
@@ -122,7 +157,9 @@ function LlmSettingsScreen() {
     saveSettings(
       {
         LLM_MODEL: fullLlmModel,
-        llm_api_key: apiKey || null,
+        // Use the selected configuration ID instead of raw API key
+        llm_configuration_id: selectedConfigId,
+        llm_api_key: null, // Don't send API key when using configuration
         SEARCH_API_KEY: searchApiKey || "",
 
         // reset advanced settings
@@ -158,6 +195,7 @@ function LlmSettingsScreen() {
         LLM_MODEL: model,
         LLM_BASE_URL: baseUrl,
         llm_api_key: apiKey || null,
+        llm_configuration_id: null, // Clear configuration ID in advanced mode
         SEARCH_API_KEY: searchApiKey || "",
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
@@ -202,6 +240,12 @@ function LlmSettingsScreen() {
 
     // Track the currently selected model for help text display
     setCurrentSelectedModel(model);
+
+    // Extract provider when model changes
+    if (model) {
+      const [provider] = model.split("/");
+      setSelectedProvider(provider);
+    }
   };
 
   const handleApiKeyIsDirty = (apiKey: string) => {
@@ -277,6 +321,10 @@ function LlmSettingsScreen() {
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
 
   const handleTestLlm = () => {
+    console.log("=== TEST LLM CLICKED ===");
+    console.log("View:", view);
+    console.log("Selected Config ID:", selectedConfigId);
+    
     // Get current form values
     const model =
       view === "basic"
@@ -286,25 +334,42 @@ function LlmSettingsScreen() {
           DEFAULT_OPENHANDS_MODEL;
 
     // Get API key from form input if available
-    const apiKeyInput = document.querySelector('input[name="llm-api-key-input"]') as HTMLInputElement;
+    const apiKeyInput = document.querySelector(
+      'input[name="llm-api-key-input"]',
+    ) as HTMLInputElement;
     // Only send API key if user has typed something new, otherwise let backend use saved key
-    const apiKey = apiKeyInput?.value && apiKeyInput.value.length > 0 ? apiKeyInput.value : null;
-    
+    const apiKey =
+      apiKeyInput?.value && apiKeyInput.value.length > 0
+        ? apiKeyInput.value
+        : null;
+
     // Get base URL from form input if in advanced mode
-    const baseUrlInput = document.querySelector('input[name="base-url-input"]') as HTMLInputElement;
-    const baseUrl = view === "advanced" ? (baseUrlInput?.value || settings?.LLM_BASE_URL) : DEFAULT_SETTINGS.LLM_BASE_URL;
+    const baseUrlInput = document.querySelector(
+      'input[name="base-url-input"]',
+    ) as HTMLInputElement;
+    const baseUrl =
+      view === "advanced"
+        ? baseUrlInput?.value || settings?.LLM_BASE_URL
+        : DEFAULT_SETTINGS.LLM_BASE_URL;
 
     // Prepare test settings with correct field names
-    // Don't send API key if it's empty - backend will use saved one
     const testSettings: any = {
       llm_model: model,
       llm_base_url: baseUrl,
     };
-    
-    // Only include API key if user entered a new one
-    if (apiKey) {
+
+    // If in basic mode and using configuration, send configuration ID
+    if (view === "basic" && selectedConfigId) {
+      testSettings.llm_configuration_id = selectedConfigId;
+      console.log("Sending configuration ID:", selectedConfigId);
+      // Don't send API key when using configuration
+    } else if (apiKey) {
+      // Only include API key if user entered a new one in advanced mode
       testSettings.llm_api_key = apiKey;
+      console.log("Sending API key (advanced mode)");
     }
+    
+    console.log("Test settings being sent:", testSettings);
 
     testLlm(testSettings, {
       onSuccess: (data) => {
@@ -320,7 +385,7 @@ function LlmSettingsScreen() {
     });
   };
 
-  if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
+  if (!settings || isLoading) return <LlmSettingsInputsSkeleton />;
 
   return (
     <div data-testid="llm-settings-screen" className="h-full">
@@ -339,25 +404,38 @@ function LlmSettingsScreen() {
               {t(I18nKey.SETTINGS$ADVANCED)}
             </SettingsSwitch>
 
-            <BrandButton
-              testId="test-llm-button"
-              type="button"
-              variant="secondary"
-              size="small"
-              onClick={handleTestLlm}
-              isDisabled={isTestingLlm}
-            >
-              {isTestingLlm ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⚡</span>
-                  {t(I18nKey.SETTINGS$TESTING)}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  ⚡ {t(I18nKey.SETTINGS$TEST_LLM)}
-                </span>
-              )}
-            </BrandButton>
+            <div className="flex items-center gap-2">
+              <Link to="/settings/llm/configurations">
+                <BrandButton
+                  testId="manage-configurations-button"
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                >
+                  {t(I18nKey.SETTINGS$MANAGE_CONFIGURATIONS)}
+                </BrandButton>
+              </Link>
+
+              <BrandButton
+                testId="test-llm-button"
+                type="button"
+                variant="secondary"
+                size="small"
+                onClick={handleTestLlm}
+                isDisabled={isTestingLlm}
+              >
+                {isTestingLlm ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⚡</span>
+                    {t(I18nKey.SETTINGS$TESTING)}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    ⚡ {t(I18nKey.SETTINGS$TEST_LLM)}
+                  </span>
+                )}
+              </BrandButton>
+            </div>
           </div>
 
           {view === "basic" && (
@@ -385,19 +463,29 @@ function LlmSettingsScreen() {
                 </>
               )}
 
-              <SettingsInput
-                testId="llm-api-key-input"
-                name="llm-api-key-input"
-                label={t(I18nKey.SETTINGS_FORM$API_KEY)}
-                type="password"
-                className="w-full max-w-[680px]"
-                placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
-                onChange={handleApiKeyIsDirty}
-                startContent={
-                  settings.LLM_API_KEY_SET && (
-                    <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
-                  )
-                }
+              {/* LLM Configuration Selector */}
+              <LLMConfigurationSelector
+                configurations={configurations || []}
+                selectedConfigId={selectedConfigId}
+                onConfigSelect={(configId, config) => {
+                  setSelectedConfigId(configId);
+                  if (config) {
+                    // Update the form to reflect the selected configuration
+                    handleApiKeyIsDirty("configured");
+                  }
+                }}
+                onAddNew={() => setIsAddModalOpen(true)}
+                onDelete={(config) => setDeletingConfig(config)}
+                onSetDefault={async (config) => {
+                  try {
+                    await setDefaultConfig.mutateAsync(config.id);
+                    displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
+                  } catch (error) {
+                    displayErrorToast(t(I18nKey.ERROR$GENERIC));
+                  }
+                }}
+                provider={selectedProvider}
+                model={currentSelectedModel}
               />
 
               <HelpLink
@@ -601,6 +689,33 @@ function LlmSettingsScreen() {
           </BrandButton>
         </div>
       </form>
+
+      {/* Add Configuration Modal */}
+      <AddLLMConfigurationModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {deletingConfig && (
+        <ConfirmationModal
+          text={t(I18nKey.SETTINGS$DELETE_API_KEY_CONFIRMATION)}
+          onConfirm={async () => {
+            try {
+              await deleteConfig.mutateAsync(deletingConfig.id);
+              displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_DELETED));
+              if (selectedConfigId === deletingConfig.id) {
+                setSelectedConfigId(null);
+              }
+            } catch (error) {
+              displayErrorToast(t(I18nKey.ERROR$GENERIC));
+            } finally {
+              setDeletingConfig(null);
+            }
+          }}
+          onCancel={() => setDeletingConfig(null)}
+        />
+      )}
     </div>
   );
 }

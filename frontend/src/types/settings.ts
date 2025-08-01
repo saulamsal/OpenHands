@@ -31,6 +31,7 @@ export type MCPConfig = {
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
+  LLM_CONFIGURATION_ID?: string;
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY_SET: boolean;
@@ -54,6 +55,7 @@ export type Settings = {
 export type ApiSettings = {
   llm_model: string;
   llm_base_url: string;
+  llm_configuration_id?: string;
   agent: string;
   language: string;
   llm_api_key: string | null;
@@ -80,6 +82,7 @@ export type ApiSettings = {
 export type PostSettings = Settings & {
   user_consents_to_analytics: boolean | null;
   llm_api_key?: string | null;
+  llm_configuration_id?: string | null;
   search_api_key?: string;
   mcp_config?: MCPConfig;
 };
