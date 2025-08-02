@@ -228,7 +228,7 @@ function MainApp() {
     <SidebarProvider>
       <div
         data-testid="root-layout"
-        className="bg-base h-screen lg:min-w-[1024px] flex flex-col md:flex-row"
+        className=" h-screen lg:min-w-[1024px] flex flex-col md:flex-row"
       >
         <AppSidebar />
 

@@ -130,9 +130,9 @@ export function AppSidebar() {
       {
         title: "New Project",
         icon: Plus,
-        isButton: true,
+        isButton: false,
         disabled: settings?.EMAIL_VERIFIED === false,
-        className: "bg-primary text-primary-foreground hover:bg-primary/90",
+        className: "text-primary hover:bg-primary/90",
       },
       {
         title: "Conversations",
