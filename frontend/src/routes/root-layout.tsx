@@ -29,6 +29,7 @@ import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { ThemeProvider } from "#/context/theme-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -259,5 +260,9 @@ function MainApp() {
 }
 
 export default function RootLayout() {
-  return <MainApp />;
+  return (
+    <ThemeProvider>
+      <MainApp />
+    </ThemeProvider>
+  );
 }

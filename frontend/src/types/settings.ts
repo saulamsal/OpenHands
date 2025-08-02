@@ -28,6 +28,8 @@ export type MCPConfig = {
   stdio_servers: MCPStdioServer[];
 };
 
+export type Theme = "auto" | "light" | "dark";
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;

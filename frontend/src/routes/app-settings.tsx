@@ -9,6 +9,7 @@ import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
+import { ThemeInput } from "#/components/features/settings/app-settings/theme-input";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import {
   displayErrorToast,
@@ -16,7 +17,6 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
-import { useConfig } from "#/hooks/query/use-config";
 import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
 
 function AppSettingsScreen() {
@@ -24,7 +24,6 @@ function AppSettingsScreen() {
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
   const { data: settings, isLoading } = useSettings();
-  const { data: config } = useConfig();
 
   const [languageInputHasChanged, setLanguageInputHasChanged] =
     React.useState(false);
@@ -150,6 +149,8 @@ function AppSettingsScreen() {
             defaultKey={settings.LANGUAGE}
             onChange={checkIfLanguageInputHasChanged}
           />
+
+          <ThemeInput />
 
           <SettingsSwitch
             testId="enable-analytics-switch"
