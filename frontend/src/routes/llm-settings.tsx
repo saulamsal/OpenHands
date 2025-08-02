@@ -96,9 +96,13 @@ function LlmSettingsScreen() {
   // Validate selected configuration ID exists
   React.useEffect(() => {
     if (selectedConfigId && configurations) {
-      const configExists = configurations.some(c => c.id === selectedConfigId);
+      const configExists = configurations.some(
+        (c) => c.id === selectedConfigId,
+      );
       if (!configExists) {
-        console.warn(`Configuration ID ${selectedConfigId} not found, resetting`);
+        console.warn(
+          `Configuration ID ${selectedConfigId} not found, resetting`,
+        );
         setSelectedConfigId(null);
       }
     }
@@ -166,9 +170,10 @@ function LlmSettingsScreen() {
     const fullLlmModel = provider && model && `${provider}/${model}`;
 
     // Validate configuration ID exists before saving
-    const validConfigId = selectedConfigId && configurations?.some(c => c.id === selectedConfigId) 
-      ? selectedConfigId 
-      : null;
+    const validConfigId =
+      selectedConfigId && configurations?.some((c) => c.id === selectedConfigId)
+        ? selectedConfigId
+        : null;
 
     saveSettings(
       {
@@ -378,7 +383,9 @@ function LlmSettingsScreen() {
     // If in basic mode and using configuration, send configuration ID
     if (view === "basic" && selectedConfigId) {
       // Validate the configuration exists before sending
-      const configExists = configurations?.some(c => c.id === selectedConfigId);
+      const configExists = configurations?.some(
+        (c) => c.id === selectedConfigId,
+      );
       if (configExists) {
         testSettings.llm_configuration_id = selectedConfigId;
         console.log("Sending configuration ID:", selectedConfigId);

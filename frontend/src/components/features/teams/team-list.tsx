@@ -104,7 +104,7 @@ function TeamCard({ team, isActive, isOwner, onClick }: TeamCardProps) {
         "w-full p-4 rounded-lg border text-left transition-all",
         "hover:border-primary/50 hover:bg-accent/50",
         "flex items-center justify-between group",
-        isActive ? "border-primary bg-primary/5" : "border-border bg-card",
+        isActive ? "border-primary bg-primary/5" : "border bg-card",
       )}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">

@@ -30,7 +30,7 @@ export function ConversationPanelButton({
         size={22}
         className={cn(
           "cursor-pointer",
-          isOpen ? "text-white" : "text-[#9099AC]",
+          isOpen ? "text-white" : "text-muted-foreground",
           disabled && "opacity-50",
         )}
       />

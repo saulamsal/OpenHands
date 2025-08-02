@@ -12,7 +12,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
       role="alert"
       className={cn(
         "relative w-full rounded-lg border px-4 py-3 text-sm flex items-center gap-2",
-        variant === "default" && "bg-background border-border",
+        variant === "default" && "bg-background border",
         variant === "destructive" &&
           "bg-destructive/10 border-destructive/20 text-destructive",
         className,

@@ -16,11 +16,13 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
       <Tooltip content={isSet ? "API Key is set" : "API Key is not set"}>
         <label
           htmlFor="api-key"
-          className="font-[500] text-[#A3A3A3] text-xs flex items-center gap-1 self-start"
+          className="font-[500] text-muted-foreground text-xs flex items-center gap-1 self-start"
         >
-          {isSet && <FaCheckCircle className="text-[#00D1B2] inline-block" />}
+          {isSet && (
+            <FaCheckCircle className="text-green-500 dark:text-green-400 inline-block" />
+          )}
           {!isSet && (
-            <FaExclamationCircle className="text-[#FF3860] inline-block" />
+            <FaExclamationCircle className="text-red-500 dark:text-red-400 inline-block" />
           )}
           {t(I18nKey.API$KEY)}
         </label>
@@ -33,16 +35,17 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
         type="password"
         defaultValue=""
         classNames={{
-          inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+          inputWrapper:
+            "bg-input rounded-md text-sm px-3 py-[10px] text-foreground border",
         }}
       />
-      <p className="text-sm text-[#A3A3A3]">
+      <p className="text-sm text-muted-foreground">
         {t(I18nKey.API$DONT_KNOW_KEY)}{" "}
         <a
           href="https://docs.all-hands.dev/usage/llms"
           rel="noreferrer noopener"
           target="_blank"
-          className="underline underline-offset-2"
+          className="underline underline-offset-2 text-primary hover:text-primary/80"
         >
           {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
         </a>

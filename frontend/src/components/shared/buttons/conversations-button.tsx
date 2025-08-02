@@ -31,7 +31,7 @@ export function ConversationsButton({
         size={22}
         className={cn(
           "cursor-pointer",
-          isActive ? "text-white" : "text-[#9099AC]",
+          isActive ? "text-white" : "text-muted-foreground",
           disabled && "opacity-50",
         )}
       />

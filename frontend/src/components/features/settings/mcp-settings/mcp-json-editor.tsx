@@ -91,10 +91,10 @@ export function MCPJsonEditor({
       <textarea
         className={cn(
           "w-full h-64 resize-y p-2 rounded-sm text-sm font-mono",
-          "bg-tertiary border border-[#717888]",
+          "bg-tertiary border border-border",
           "placeholder:italic placeholder:text-tertiary-alt",
           "focus:outline-none focus:ring-1 focus:ring-primary",
-          "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+          "disabled:bg-muted disabled:border-[#2D2F36] disabled:cursor-not-allowed",
         )}
         value={configText}
         onChange={handleTextChange}

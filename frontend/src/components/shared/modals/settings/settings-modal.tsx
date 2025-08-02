@@ -29,7 +29,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         <span className="text-xl leading-6 font-semibold -tracking-[0.01em]">
           {t(I18nKey.AI_SETTINGS$TITLE)}
         </span>
-        <p className="text-xs text-[#A3A3A3]">
+        <p className="text-xs text-muted-foreground">
           {t(I18nKey.SETTINGS$DESCRIPTION)}{" "}
           {t(I18nKey.SETTINGS$FOR_OTHER_OPTIONS)}
           <Link

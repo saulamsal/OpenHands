@@ -315,7 +315,7 @@ export function WsClientProvider({
       conversation_id: conversationId,
       providers_set: providers,
     };
-    
+
     // Only add session_api_key if it exists
     if (conversation.session_api_key) {
       query.session_api_key = conversation.session_api_key;

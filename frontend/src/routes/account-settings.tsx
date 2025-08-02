@@ -43,7 +43,7 @@ function UsernameSection({
             type="button"
             onClick={onSaveUsername}
             disabled={!isUsernameChanged || isSaving}
-            className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+            className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-primary-foreground"
             data-testid="save-username-button"
           >
             {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
@@ -111,7 +111,7 @@ function EmailSection({
             type="button"
             onClick={onSaveEmail}
             disabled={!isEmailChanged || isSaving || !isEmailValid}
-            className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+            className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-primary-foreground"
             data-testid="save-email-button"
           >
             {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
@@ -122,7 +122,7 @@ function EmailSection({
               type="button"
               onClick={onResendVerification}
               disabled={isResendingVerification}
-              className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+              className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-primary-foreground"
               data-testid="resend-verification-button"
             >
               {isResendingVerification
@@ -325,7 +325,7 @@ function AccountSettingsScreen() {
               <h3 className="text-lg font-medium text-white">
                 {t("SETTINGS$ACCOUNT_ACTIONS")}
               </h3>
-              <p className="text-sm text-[#8B949E]">
+              <p className="text-sm text-muted-foreground">
                 {t("SETTINGS$LOGOUT_DESCRIPTION")}
               </p>
             </div>

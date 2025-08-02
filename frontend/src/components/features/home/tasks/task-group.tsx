@@ -13,7 +13,7 @@ export function TaskGroup({ title, tasks }: TaskGroupProps) {
 
   return (
     <div className="text-content-2">
-      <div className="flex items-center gap-2 border-b-1 border-[#717888]">
+      <div className="flex items-center gap-2 border-b-1 border-border">
         {gitProvider === "github" && <FaGithub size={14} />}
         {gitProvider === "gitlab" && <FaGitlab />}
         {gitProvider === "bitbucket" && <FaBitbucket />}

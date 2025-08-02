@@ -99,12 +99,12 @@ export function ModelSelector({
           defaultSelectedKey={selectedProvider ?? undefined}
           selectedKey={selectedProvider}
           classNames={{
-            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+            popoverContent: "bg-base-tertiary rounded-xl border border-border",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
+                "bg-base-tertiary border border-border h-10 w-full rounded-sm p-2 placeholder:italic",
             },
           }}
         >
@@ -153,12 +153,12 @@ export function ModelSelector({
           selectedKey={selectedModel}
           defaultSelectedKey={selectedModel ?? undefined}
           classNames={{
-            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+            popoverContent: "bg-base-tertiary rounded-xl border border-border",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
+                "bg-base-tertiary border border-border h-10 w-full rounded-sm p-2 placeholder:italic",
             },
           }}
         >

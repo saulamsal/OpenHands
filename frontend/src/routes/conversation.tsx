@@ -59,7 +59,10 @@ function AppContent() {
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
-    } else if (conversation?.status === "STOPPED" || conversation?.status === "STARTING") {
+    } else if (
+      conversation?.status === "STOPPED" ||
+      conversation?.status === "STARTING"
+    ) {
       // start the conversation if the state is stopped or starting on initial load
       OpenHands.startConversation(conversation.conversation_id, providers).then(
         () => refetch(),
@@ -98,8 +101,16 @@ function AppContent() {
     if (width <= 1024) {
       return (
         <div className="flex flex-col gap-3 overflow-auto w-full">
-          <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]">
-            <ChatInterface />
+          <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px] flex flex-col">
+            <div className="shrink-0">
+              <Controls
+                setSecurityOpen={onSecurityModalOpen}
+                showSecurityLock={!!settings?.SECURITY_ANALYZER}
+              />
+            </div>
+            <div className="flex-grow overflow-hidden">
+              <ChatInterface />
+            </div>
           </div>
           <div className="h-full w-full min-h-[494px]">
             <ConversationTabs />
@@ -112,9 +123,21 @@ function AppContent() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary flex flex-col"
         secondClassName="flex flex-col overflow-hidden"
-        firstChild={<ChatInterface />}
+        firstChild={
+          <div className="flex flex-col h-full">
+            <div className="shrink-0">
+              <Controls
+                setSecurityOpen={onSecurityModalOpen}
+                showSecurityLock={!!settings?.SECURITY_ANALYZER}
+              />
+            </div>
+            <div className="flex-grow overflow-hidden">
+              <ChatInterface />
+            </div>
+          </div>
+        }
         secondChild={<ConversationTabs />}
       />
     );
@@ -127,10 +150,6 @@ function AppContent() {
           <div data-testid="app-route" className="flex flex-col h-full gap-3">
             <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-            <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings?.SECURITY_ANALYZER}
-            />
             {settings && (
               <Security
                 isOpen={securityModalIsOpen}

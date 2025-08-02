@@ -194,7 +194,7 @@ function AppSettingsScreen() {
         </div>
       )}
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <div className="flex gap-6 p-6 justify-end border-t">
         <BrandButton
           testId="submit-button"
           variant="primary"

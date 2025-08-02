@@ -86,8 +86,8 @@ export function MicroagentManagementRepositories({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className={cn(
-            "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
-            "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+            "bg-tertiary border border-border bg-muted w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+            "disabled:bg-muted disabled:border-[#2D2F36] disabled:cursor-not-allowed",
           )}
         />
       </div>

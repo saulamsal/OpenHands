@@ -62,7 +62,7 @@ export function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <li className="py-3 border-b border-[#717888] flex items-center pr-6 last:border-b-0">
+    <li className="py-3 border-b border-border flex items-center pr-6 last:border-b-0">
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full pl-8">

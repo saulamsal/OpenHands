@@ -24,7 +24,7 @@ export function ExitConversationModal({
           <ModalButton
             text={t(I18nKey.ACTION$CONFIRM)}
             onClick={onConfirm}
-            className="bg-[#C63143] flex-1"
+            className="bg-destructive flex-1"
           />
           <ModalButton
             text={t(I18nKey.BUTTON$CANCEL)}

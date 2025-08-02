@@ -17,7 +17,7 @@ export function CustomModelInput({
     <fieldset className="flex flex-col gap-2">
       <label
         htmlFor="custom-model"
-        className="font-[500] text-[#A3A3A3] text-xs"
+        className="font-[500] text-muted-foreground text-xs"
       >
         {t(I18nKey.SETTINGS_FORM$CUSTOM_MODEL_LABEL)}
       </label>
@@ -30,7 +30,8 @@ export function CustomModelInput({
         defaultValue={defaultValue}
         aria-label={t(I18nKey.MODEL$CUSTOM_MODEL)}
         classNames={{
-          inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+          inputWrapper:
+            "bg-input rounded-md text-sm px-3 py-[10px] text-foreground border",
         }}
       />
     </fieldset>

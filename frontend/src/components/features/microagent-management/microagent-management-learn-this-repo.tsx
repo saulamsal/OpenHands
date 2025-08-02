@@ -28,7 +28,7 @@ export function MicroagentManagementLearnThisRepo({
       onClick={handleClick}
       data-testid="learn-this-repo-trigger"
     >
-      <span className="text-[16px] font-normal text-[#8480FF]">
+      <span className="text-[16px] font-normal text-primary">
         {t(I18nKey.MICROAGENT_MANAGEMENT$LEARN_THIS_REPO)}
       </span>
     </div>

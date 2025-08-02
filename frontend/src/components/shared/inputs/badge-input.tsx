@@ -43,13 +43,13 @@ export function BadgeInput({
   return (
     <div
       className={cn(
-        "bg-tertiary border border-[#717888] rounded w-full p-2 placeholder:italic placeholder:text-tertiary-alt",
+        "bg-base-tertiary border border-border rounded w-full p-2 placeholder:italic placeholder:text-muted-foreground",
         "flex flex-wrap items-center gap-2",
       )}
     >
       {value.map((badge, index) => (
         <div key={index}>
-          <BrandBadge className="flex items-center gap-0.5 py-1 px-2.5 text-sm text-[#0D0F11] font-semibold leading-[16px]">
+          <BrandBadge className="flex items-center gap-0.5 py-1 px-2.5 text-sm text-primary-foreground font-semibold leading-[16px]">
             {badge}
             <button
               data-testid="remove-button"

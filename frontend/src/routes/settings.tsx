@@ -59,10 +59,12 @@ function SettingsScreen() {
               cn(
                 "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
                 isActive && "border-primary",
+
               )
             }
+
           >
-            <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
+            <span className="text-sm">{t(text)}</span>
           </NavLink>
         ))}
       </nav>

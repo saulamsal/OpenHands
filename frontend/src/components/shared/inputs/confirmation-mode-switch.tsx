@@ -21,14 +21,14 @@ export function ConfirmationModeSwitch({
       defaultSelected={defaultSelected}
       classNames={{
         thumb: cn(
-          "bg-[#5D5D5D] w-3 h-3",
-          "group-data-[selected=true]:bg-white",
+          "bg-muted-foreground w-3 h-3",
+          "group-data-[selected=true]:bg-primary-foreground",
         ),
         wrapper: cn(
-          "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
-          "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
+          "border bg-background px-[6px] w-12 h-6",
+          "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-primary",
         ),
-        label: "text-[#A3A3A3] text-xs",
+        label: "text-muted-foreground text-xs",
       }}
     >
       {t(I18nKey.SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL)}

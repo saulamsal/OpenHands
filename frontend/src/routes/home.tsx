@@ -32,11 +32,11 @@ function HomeScreen() {
     >
       <HomeHeader />
 
-      <hr className="border-[#717888]" />
+      <hr className="border" />
 
       <main className="flex flex-col lg:flex-row justify-between gap-8">
         <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
-        <hr className="md:hidden border-[#717888]" />
+        <hr className="md:hidden border" />
         {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
       </main>
     </div>

@@ -59,7 +59,7 @@ export function MicroagentManagementSidebar({
   return (
     <div
       className={cn(
-        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col",
+        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-border bg-card rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col",
         isSmallerScreen && "w-full border-none",
       )}
     >

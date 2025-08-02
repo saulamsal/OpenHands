@@ -66,7 +66,7 @@ function EmailInputSection({
             type="button"
             onClick={onSaveEmail}
             disabled={!isEmailChanged || isSaving || !isEmailValid}
-            className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+            className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-primary-foreground"
             data-testid="save-email-button"
           >
             {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
@@ -77,7 +77,7 @@ function EmailInputSection({
               type="button"
               onClick={onResendVerification}
               disabled={isResendingVerification}
-              className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+              className="px-4 py-2 rounded-sm bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-primary-foreground"
               data-testid="resend-verification-button"
             >
               {isResendingVerification
@@ -244,7 +244,7 @@ function UserSettingsScreen() {
               <h3 className="text-lg font-medium text-white">
                 Account Actions
               </h3>
-              <p className="text-sm text-[#8B949E]">
+              <p className="text-sm text-muted-foreground">
                 Sign out of your account. You will need to sign back in to
                 access your account.
               </p>
