@@ -1,6 +1,7 @@
 import os
 import typing
 from functools import lru_cache
+from pathlib import Path
 from typing import Callable, Optional
 from uuid import UUID
 
@@ -238,17 +239,42 @@ class DockerRuntime(ActionExecutionClient):
             raise ex
 
     def _process_volumes(self) -> dict[str, dict[str, str]]:
-        """Process volume mounts based on configuration.
-
+        """ALWAYS create conversation isolation, regardless of environment variables.
+        
         Returns:
             A dictionary mapping host paths to container bind mounts with their modes.
         """
-        # Initialize volumes dictionary
         volumes: dict[str, dict[str, str]] = {}
 
-        # Process volumes (comma-delimited)
+        # STEP 1: ALWAYS create conversation-specific directory for isolation
+        workspace_base = self.config.workspace_mount_path or "./workspace"
+        conv_host_dir = os.path.join(
+            os.path.abspath(workspace_base),
+            "conversations",
+            self.user_id or "default",
+            self.sid
+        )
+
+        # Ensure directory exists with proper permissions
+        try:
+            os.makedirs(conv_host_dir, mode=0o755, exist_ok=True)
+            self.log('info', f"✅ Created isolated workspace directory: {conv_host_dir}")
+        except OSError as e:
+            self.log('error', f'❌ Failed to create workspace directory {conv_host_dir}: {e}')
+            # Fall back to base directory if creation fails
+            conv_host_dir = os.path.abspath(workspace_base)
+            self.log('warning', f'⚠️  Falling back to base directory: {conv_host_dir}')
+
+        # STEP 2: ALWAYS mount conversation directory to /workspace for isolation
+        volumes[conv_host_dir] = {
+            'bind': '/workspace',
+            'mode': 'rw'
+        }
+        self.log('info', f"🔗 Isolated workspace mount: {conv_host_dir} -> /workspace")
+
+        # STEP 3: Process additional custom volumes (avoiding /workspace conflicts)
         if self.config.sandbox.volumes is not None:
-            # Handle multiple mounts with comma delimiter
+            self.log('info', f"📁 Processing additional custom volumes: {self.config.sandbox.volumes}")
             mounts = self.config.sandbox.volumes.split(',')
 
             for mount in mounts:
@@ -256,34 +282,21 @@ class DockerRuntime(ActionExecutionClient):
                 if len(parts) >= 2:
                     host_path = os.path.abspath(parts[0])
                     container_path = parts[1]
-                    # Default mode is 'rw' if not specified
                     mount_mode = parts[2] if len(parts) > 2 else 'rw'
 
+                    # Skip if trying to mount to /workspace (we handle that above)
+                    if container_path == '/workspace':
+                        self.log('warning', f'⚠️  Skipping custom /workspace mount (using isolation): {mount}')
+                        continue
+
+                    # Add as additional mount
                     volumes[host_path] = {
                         'bind': container_path,
                         'mode': mount_mode,
                     }
-                    logger.debug(
-                        f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
-                    )
+                    self.log('info', f'📂 Additional mount: {host_path} -> {container_path} ({mount_mode})')
 
-        # Legacy mounting with workspace_* parameters
-        elif (
-            self.config.workspace_mount_path is not None
-            and self.config.workspace_mount_path_in_sandbox is not None
-        ):
-            mount_mode = 'rw'  # Default mode
-
-            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            # Add os.path.abspath() here so that relative paths can be used when workspace_mount_path is configured in config.toml
-            volumes[os.path.abspath(self.config.workspace_mount_path)] = {
-                'bind': self.config.workspace_mount_path_in_sandbox,
-                'mode': mount_mode,
-            }
-            logger.debug(
-                f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
-            )
-
+        self.log('info', f"📊 Total volume mounts configured: {len(volumes)}")
         return volumes
 
     def init_container(self) -> None:
@@ -501,26 +514,24 @@ class DockerRuntime(ActionExecutionClient):
         else:
             raise ValueError(f"Unknown workspace storage type: {storage_type}")
 
+
     async def _init_workspace_manager(self) -> None:
-        """Initialize workspace manager for conversation-specific isolation."""
+        """Initialize workspace manager with simplified paths - mount handles isolation."""
         try:
             # Check if workspace storage is enabled
             if not self.config.workspace_storage_type:
                 self.log('debug', 'Workspace storage not configured, skipping workspace manager')
                 return
             
-            # Get workspace path in container
-            workspace_path = self.config.workspace_mount_path_in_sandbox
-            
             # Initialize storage
             storage = self._get_workspace_storage()
             
-            # Create workspace manager
+            # Create workspace manager with simple /workspace path - mount provides isolation
             self.workspace_manager = WorkspaceManager(
                 storage=storage,
                 conversation_id=self.sid,
                 user_id=self.user_id or 'default',
-                workspace_path=workspace_path,
+                workspace_path='/workspace',  # Simplified!
                 backup_interval=self.config.workspace_backup_interval,
             )
             
@@ -664,8 +675,8 @@ class DockerRuntime(ActionExecutionClient):
         token = super().get_vscode_token()
         if not token:
             return None
-
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        # Simple /workspace - mount provides isolation
+        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder=/workspace'
         return vscode_url
 
     @property
@@ -703,6 +714,11 @@ class DockerRuntime(ActionExecutionClient):
 
         # Wait for the container to be ready
         self.wait_until_alive()
+
+    @property
+    def workspace_root(self) -> Path:
+        """Return the workspace root path - simplified since mount provides isolation."""
+        return Path('/workspace')
 
     @classmethod
     async def delete(cls, conversation_id: str) -> None:
