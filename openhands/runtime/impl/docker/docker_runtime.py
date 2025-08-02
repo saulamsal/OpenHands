@@ -1,7 +1,7 @@
 import os
 import typing
 from functools import lru_cache
-from typing import Callable
+from typing import Callable, Optional
 from uuid import UUID
 
 import docker
@@ -36,6 +36,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
+from openhands.storage.workspace import WorkspaceManager, S3WorkspaceStorage, WorkspaceStorage
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
@@ -131,6 +132,9 @@ class DockerRuntime(ActionExecutionClient):
 
         # Buffer for container logs
         self.log_streamer: LogStreamer | None = None
+        
+        # Workspace management
+        self.workspace_manager: Optional[WorkspaceManager] = None
 
         super().__init__(
             config,
@@ -193,6 +197,9 @@ class DockerRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             await call_sync_from_async(self.setup_initial_env)
+
+        # Initialize workspace management after container is ready
+        await self._init_workspace_manager()
 
         self.log(
             'debug',
@@ -477,12 +484,83 @@ class DockerRuntime(ActionExecutionClient):
 
         self.check_if_alive()
 
+    def _get_workspace_storage(self) -> WorkspaceStorage:
+        """Factory for workspace storage based on configuration."""
+        storage_type = self.config.workspace_storage_type or 's3'
+        
+        if storage_type == 's3':
+            return S3WorkspaceStorage(
+                bucket=os.getenv('AWS_S3_BUCKET'),
+                region=os.getenv('AWS_DEFAULT_REGION'),
+                endpoint_url=os.getenv('AWS_S3_ENDPOINT'),
+                access_key=os.getenv('AWS_ACCESS_KEY_ID'),
+                secret_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                secure=os.getenv('AWS_S3_SECURE', 'true').lower() == 'true',
+                verify_ssl=os.getenv('AWS_S3_VERIFY_SSL', 'true').lower() == 'true',
+            )
+        else:
+            raise ValueError(f"Unknown workspace storage type: {storage_type}")
+
+    async def _init_workspace_manager(self) -> None:
+        """Initialize workspace manager for conversation-specific isolation."""
+        try:
+            # Check if workspace storage is enabled
+            if not self.config.workspace_storage_type:
+                self.log('debug', 'Workspace storage not configured, skipping workspace manager')
+                return
+            
+            # Get workspace path in container
+            workspace_path = self.config.workspace_mount_path_in_sandbox
+            
+            # Initialize storage
+            storage = self._get_workspace_storage()
+            
+            # Create workspace manager
+            self.workspace_manager = WorkspaceManager(
+                storage=storage,
+                conversation_id=self.sid,
+                user_id=self.user_id or 'default',
+                workspace_path=workspace_path,
+                backup_interval=self.config.workspace_backup_interval,
+            )
+            
+            # Initialize workspace (download existing files or create new)
+            await self.workspace_manager.initialize()
+            
+            self.log('info', f'Workspace manager initialized for conversation {self.sid}')
+            
+        except Exception as e:
+            self.log('error', f'Failed to initialize workspace manager: {e}')
+            # Don't fail the runtime if workspace manager fails
+            self.workspace_manager = None
+
+    async def trigger_workspace_sync(self) -> None:
+        """Manually trigger workspace synchronization (for agent completion events)."""
+        if self.workspace_manager:
+            await self.workspace_manager.manual_sync()
+        else:
+            self.log('debug', 'Workspace manager not available for manual sync')
+
     def close(self, rm_all_containers: bool | None = None) -> None:
         """Closes the DockerRuntime and associated objects
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
+        # Sync workspace before closing
+        if self.workspace_manager:
+            try:
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Create a task to run in background
+                    asyncio.create_task(self.workspace_manager.final_sync())
+                else:
+                    # Run sync in new event loop
+                    loop.run_until_complete(self.workspace_manager.final_sync())
+            except Exception as e:
+                self.log('error', f'Error during workspace final sync: {e}')
+        
         super().close()
         if self.log_streamer:
             self.log_streamer.close()

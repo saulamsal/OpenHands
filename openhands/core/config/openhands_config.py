@@ -83,6 +83,28 @@ class OpenHandsConfig(BaseModel):
     workspace_mount_path_in_sandbox: str = Field(
         default=DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
     )
+    
+    # Workspace storage configuration
+    workspace_storage_type: str = Field(
+        default=os.getenv('WORKSPACE_STORAGE_TYPE', ''),
+        description='Type of workspace storage backend (s3, local, disabled)'
+    )
+    workspace_backup_interval: int = Field(
+        default=int(os.getenv('WORKSPACE_BACKUP_INTERVAL', '300')),
+        description='Interval for compressed workspace backups in seconds'
+    )
+    workspace_sync_debounce_min: float = Field(
+        default=float(os.getenv('WORKSPACE_SYNC_DEBOUNCE_MIN', '2.0')),
+        description='Minimum debounce time for file sync in seconds'
+    )
+    workspace_sync_debounce_max: float = Field(
+        default=float(os.getenv('WORKSPACE_SYNC_DEBOUNCE_MAX', '30.0')),
+        description='Maximum debounce time for file sync in seconds'
+    )
+    workspace_max_size_mb: int = Field(
+        default=int(os.getenv('WORKSPACE_MAX_SIZE_MB', '500')),
+        description='Maximum workspace size per conversation in MB'
+    )
 
     # Deprecated parameters - will be removed in a future version
     workspace_mount_path: str | None = Field(default=None, deprecated=True)

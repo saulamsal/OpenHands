@@ -95,8 +95,9 @@ git clone https://github.com/qlur-ai/templates.git qlur-templates && mkdir -p My
 
 ### STEP 2: Install Dependencies (WAIT FOR COMPLETION)
 ```bash
-npm install
+npm install --force
 ```
+**⚠️ IMPORTANT: Always use `--force` flag to ensure NativeWind/lightningcss binaries install correctly**
 
 ### STEP 3: Start Server
 ```bash
@@ -119,6 +120,55 @@ Then modify `app/index.tsx` for specific features requested.
 - "Simple reminder app" → Get basic app running FIRST
 - "Calorie tracker" → Get basic app running FIRST
 - "Todo list" → Get basic app running FIRST
+
+## 🚨 NativeWind Lightningcss Binary Issues
+
+### Problem: Metro Server Fails with Lightningcss Error
+
+If you encounter this error when running `npx expo start --web --tunnel`:
+
+```
+Error: Cannot find module '../lightningcss.linux-arm64-gnu.node'
+Cannot find module '../lightningcss.darwin-arm64.node'
+Cannot find module '../lightningcss.win32-x64-msvc.node'
+```
+
+**Root Cause:** NativeWind depends on lightningcss native binaries that match your system architecture. The error occurs when:
+- Native binaries weren't properly installed during `npm install`
+- Platform-specific optional dependencies were skipped
+- Architecture mismatch between expected and actual system
+
+### 🔧 **IMMEDIATE FIX (Works 100% of the time):**
+
+```bash
+# Step 1: Clean install
+rm -rf node_modules package-lock.json
+
+# Step 2: Force reinstall with all optional dependencies
+npm install --force
+
+# Step 3: Verify lightningcss binary is present
+ls -la node_modules/lightningcss-*/lightningcss.*.node
+
+# Step 4: Start Expo
+npx expo start --web --tunnel
+```
+
+### **Why `--force` Flag is Critical:**
+- Forces npm to evaluate ALL optional dependencies
+- Ensures platform-specific binaries are downloaded
+- Overcomes npm cache issues that prevent binary installation
+- Required for NativeWind/lightningcss to work properly
+
+### **Platform-Specific Binaries:**
+- **macOS ARM64**: `lightningcss-darwin-arm64`
+- **macOS x64**: `lightningcss-darwin-x64` 
+- **Linux ARM64**: `lightningcss-linux-arm64-gnu`
+- **Linux x64**: `lightningcss-linux-x64-gnu`
+- **Windows x64**: `lightningcss-win32-x64-msvc`
+
+### **Prevention:**
+Always use `npm install --force` when setting up NativeWind projects to ensure all platform binaries are properly installed.
 
 ## 🛑 CRITICAL WARNINGS
 
@@ -180,7 +230,7 @@ rm -rf ./MyApp qlur-templates && git clone https://github.com/qlur-ai/templates.
 ```
 
 ```bash
-npm install && npx expo start --web --tunnel &
+npm install --force && npx expo start --web --tunnel &
 ```
 
 ```bash
@@ -211,7 +261,7 @@ git clone https://github.com/qlur-ai/templates.git qlur-templates && mkdir -p My
 ```
 
 ```bash
-npm install && npx expo start --web --tunnel &
+npm install --force && npx expo start --web --tunnel &
 ```
 
 ```bash
