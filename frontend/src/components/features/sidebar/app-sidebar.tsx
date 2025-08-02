@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, Settings, BookOpen, Bot, Plus } from "lucide-react";
 import { useAuth } from "#/context/auth-context";
 import { UserActions } from "./user-actions";
 import { TeamSwitcher } from "../teams/team-switcher";
@@ -18,7 +19,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -28,15 +28,6 @@ import {
   useSidebar,
 } from "#/components/ui/sidebar";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
-import { 
-  Home, 
-  MessageSquare, 
-  Settings, 
-  BookOpen, 
-  Bot,
-  Plus,
-  PanelLeftIcon 
-} from "lucide-react";
 import { Button } from "#/components/ui/button";
 
 export function AppSidebar() {
@@ -107,22 +98,28 @@ export function AppSidebar() {
       icon: Plus,
       isButton: true,
       disabled: settings?.EMAIL_VERIFIED === false,
-      className: "bg-primary text-primary-foreground hover:bg-primary/90"
+      className: "bg-primary text-primary-foreground hover:bg-primary/90",
     },
     {
       title: "Conversations",
       icon: MessageSquare,
       url: "/conversations",
-      isActive: location.pathname === "/conversations" || location.pathname.startsWith("/conversations/"),
+      isActive:
+        location.pathname === "/conversations" ||
+        location.pathname.startsWith("/conversations/"),
       disabled: settings?.EMAIL_VERIFIED === false,
     },
-    ...(shouldHideMicroagentManagement ? [] : [{
-      title: "Microagents",
-      icon: Bot,
-      url: "/microagent-management",
-      isActive: location.pathname === "/microagent-management",
-      disabled: settings?.EMAIL_VERIFIED === false,
-    }]),
+    ...(shouldHideMicroagentManagement
+      ? []
+      : [
+          {
+            title: "Microagents",
+            icon: Bot,
+            url: "/microagent-management",
+            isActive: location.pathname === "/microagent-management",
+            disabled: settings?.EMAIL_VERIFIED === false,
+          },
+        ]),
   ];
 
   const footerItems = [
@@ -154,7 +151,7 @@ export function AppSidebar() {
               </div>
             )}
           </div>
-          
+
           {/* Team Switcher - always shown when authenticated */}
           {isAuthenticated && state === "expanded" && (
             <div className="px-2">
@@ -232,7 +229,7 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-                
+
                 {/* User Actions */}
                 <SidebarMenuItem>
                   <div className="px-2 py-1">

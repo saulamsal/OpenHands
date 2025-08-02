@@ -14,7 +14,11 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { AppSidebar } from "#/components/features/sidebar/app-sidebar";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "#/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "#/components/ui/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { EnhancedAuthModal } from "#/components/features/auth/enhanced-auth-modal";
 import { useAuth } from "#/context/auth-context";

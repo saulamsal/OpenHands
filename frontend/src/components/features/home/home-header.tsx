@@ -6,6 +6,7 @@ import { BrandButton } from "../settings/brand-button";
 import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "#/hooks/query/use-config";
+import { ProjectInput } from "#/components/shared/input/project-input";
 
 export function HomeHeader() {
   const navigate = useNavigate();
@@ -24,62 +25,83 @@ export function HomeHeader() {
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
+  const handleCreateConversation = () => {
+    console.log("[HomeHeader] Launch clicked - Auth state:", {
+      isAuthenticated,
+      authLoading,
+    });
+
+    // Check if user is not authenticated
+    if (!isAuthenticated && !authLoading) {
+      console.log("[HomeHeader] Not authenticated, redirecting to login");
+      navigate("/login");
+      return;
+    }
+
+    createConversation(
+      {},
+      {
+        onSuccess: (data) => {
+          console.log(
+            "[HomeHeader] Conversation created successfully:",
+            data.conversation_id,
+          );
+          navigate(`/conversations/${data.conversation_id}`);
+        },
+        onError: (error: any) => {
+          console.error("[HomeHeader] Failed to create conversation:", error);
+          // If we get a 401 error, redirect to login
+          if (error?.response?.status === 401) {
+            console.log("[HomeHeader] Got 401 error, redirecting to login");
+            navigate("/login");
+          }
+        },
+      },
+    );
+  };
+
+  const handleSendMessage = (message: string) => {
+    // For now, just trigger the conversation creation
+    // Later we can pass the message to the conversation
+    console.log("[HomeHeader] Message sent:", message);
+    handleCreateConversation();
+  };
+
+  const handleAttach = () => {
+    // TODO: Implement file upload functionality
+    // This could open a file picker dialog
+    console.log(
+      "[ProjectInput] Attach clicked - will implement file upload later",
+    );
+  };
+
   return (
     <header className="flex flex-col gap-5">
-      <AllHandsLogo />
+      <AllHandsLogo style={{ width: 80, height: 80 }} />
 
-      <div className="flex items-center justify-between">
-        <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
-        <BrandButton
-          testId="header-launch-button"
-          variant="primary"
-          type="button"
-          onClick={() => {
-            console.log("[HomeHeader] Launch clicked - Auth state:", {
-              isAuthenticated,
-              authLoading,
-            });
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
+          <BrandButton
+            testId="header-launch-button"
+            variant="primary"
+            type="button"
+            onClick={handleCreateConversation}
+            isDisabled={isCreatingConversation}
+          >
+            {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
+            {isCreatingConversation && t("HOME$LOADING")}
+          </BrandButton>
+        </div>
 
-            // Check if user is not authenticated
-            if (!isAuthenticated && !authLoading) {
-              console.log(
-                "[HomeHeader] Not authenticated, redirecting to login",
-              );
-              navigate("/login");
-              return;
-            }
-
-            createConversation(
-              {},
-              {
-                onSuccess: (data) => {
-                  console.log(
-                    "[HomeHeader] Conversation created successfully:",
-                    data.conversation_id,
-                  );
-                  navigate(`/conversations/${data.conversation_id}`);
-                },
-                onError: (error: any) => {
-                  console.error(
-                    "[HomeHeader] Failed to create conversation:",
-                    error,
-                  );
-                  // If we get a 401 error, redirect to login
-                  if (error?.response?.status === 401) {
-                    console.log(
-                      "[HomeHeader] Got 401 error, redirecting to login",
-                    );
-                    navigate("/login");
-                  }
-                },
-              },
-            );
-          }}
-          isDisabled={isCreatingConversation}
-        >
-          {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
-          {isCreatingConversation && t("HOME$LOADING")}
-        </BrandButton>
+        {/* Project Input Component */}
+        <ProjectInput
+          placeholder="What are we going to build today?"
+          onSend={handleSendMessage}
+          onAttach={handleAttach}
+          disabled={isCreatingConversation}
+          className="max-w-2xl"
+        />
       </div>
 
       <div className="flex items-center justify-between">

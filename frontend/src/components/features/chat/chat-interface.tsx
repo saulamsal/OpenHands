@@ -144,19 +144,20 @@ export function ChatInterface() {
     setMessageToSend(null);
   };
 
-  const handleStop = () => {
+  const handleStop = React.useCallback(() => {
     posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
+  }, [send]);
 
-  const onClickShareFeedbackActionButton = async (
-    polarity: "positive" | "negative",
-  ) => {
-    setFeedbackModalIsOpen(true);
-    setFeedbackPolarity(polarity);
-  };
+  const onClickShareFeedbackActionButton = React.useCallback(
+    async (polarity: "positive" | "negative") => {
+      setFeedbackModalIsOpen(true);
+      setFeedbackPolarity(polarity);
+    },
+    [],
+  );
 
-  const onClickExportTrajectoryButton = () => {
+  const onClickExportTrajectoryButton = React.useCallback(() => {
     if (!params.conversationId) {
       displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       return;
@@ -173,22 +174,32 @@ export function ChatInterface() {
         displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
       },
     });
-  };
+  }, [params.conversationId, getTrajectory, t]);
 
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
 
   // Create a ScrollProvider with the scroll hook values
-  const scrollProviderValue = {
-    scrollRef,
-    autoScroll,
-    setAutoScroll,
-    scrollDomToBottom,
-    hitBottom,
-    setHitBottom,
-    onChatBodyScroll,
-  };
+  const scrollProviderValue = React.useMemo(
+    () => ({
+      scrollRef,
+      autoScroll,
+      setAutoScroll,
+      scrollDomToBottom,
+      hitBottom,
+      setHitBottom,
+      onChatBodyScroll,
+    }),
+    [
+      autoScroll,
+      scrollDomToBottom,
+      hitBottom,
+      setAutoScroll,
+      setHitBottom,
+      onChatBodyScroll,
+    ],
+  );
 
   return (
     <ScrollProvider value={scrollProviderValue}>
@@ -224,7 +235,10 @@ export function ChatInterface() {
             hasSubstantiveAgentActions &&
             !optimisticUserMessage && (
               <ActionSuggestions
-                onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
+                onSuggestionsClick={React.useCallback(
+                  (value: string) => handleSendMessage(value, [], []),
+                  [handleSendMessage],
+                )}
               />
             )}
         </div>
@@ -232,13 +246,15 @@ export function ChatInterface() {
         <div className="flex flex-col gap-[6px] px-4 pb-4">
           <div className="flex justify-between relative">
             <TrajectoryActions
-              onPositiveFeedback={() =>
-                onClickShareFeedbackActionButton("positive")
-              }
-              onNegativeFeedback={() =>
-                onClickShareFeedbackActionButton("negative")
-              }
-              onExportTrajectory={() => onClickExportTrajectoryButton()}
+              onPositiveFeedback={React.useCallback(
+                () => onClickShareFeedbackActionButton("positive"),
+                [onClickShareFeedbackActionButton],
+              )}
+              onNegativeFeedback={React.useCallback(
+                () => onClickShareFeedbackActionButton("negative"),
+                [onClickShareFeedbackActionButton],
+              )}
+              onExportTrajectory={onClickExportTrajectoryButton}
             />
 
             <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
