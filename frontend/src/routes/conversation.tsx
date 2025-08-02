@@ -38,6 +38,7 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 };
 
 function AppContent() {
+  console.log("🔄 AppContent render", new Date().toISOString());
   useConversationConfig();
   const { data: settings } = useSettings();
   const { conversationId } = useConversationId();
@@ -51,7 +52,7 @@ function AppContent() {
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
 
-  const [width, setWidth] = React.useState(window.innerWidth);
+  const [width, setWidth] = React.useState(() => window.innerWidth);
 
   React.useEffect(() => {
     if (isFetched && !conversation && isAuthed) {
@@ -64,16 +65,21 @@ function AppContent() {
       conversation?.status === "STARTING"
     ) {
       // start the conversation if the state is stopped or starting on initial load
-      OpenHands.startConversation(conversation.conversation_id, providers).then(
-        () => refetch(),
-      );
+      OpenHands.startConversation(conversation.conversation_id, providers);
     }
-  }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
+  }, [
+    conversation?.conversation_id,
+    conversation?.status,
+    isFetched,
+    isAuthed,
+    providers,
+    navigate,
+  ]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-  }, [conversationId]);
+  }, [conversationId, dispatch]);
 
   useEffectOnce(() => {
     dispatch(clearTerminal());
@@ -121,7 +127,7 @@ function AppContent() {
     return (
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
-        className="grow h-full min-h-0 min-w-0"
+        className="grow h-full w-full min-h-0 min-w-0"
         initialSize={500}
         firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary flex flex-col"
         secondClassName="flex flex-col overflow-hidden"
@@ -147,8 +153,10 @@ function AppContent() {
     <WsClientProvider conversationId={conversationId}>
       <ConversationSubscriptionsProvider>
         <EventHandler>
-          <div data-testid="app-route" className="flex flex-col h-full gap-3">
-            <div className="flex h-full overflow-auto">{renderMain()}</div>
+          <div data-testid="app-route" className="flex flex-col h-full w-full">
+            <div className="flex h-full overflow-auto w-full">
+              {renderMain()}
+            </div>
 
             {settings && (
               <Security

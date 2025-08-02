@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import '@fontsource-variable/host-grotesk';
 
 @custom-variant dark (&:is(.dark *));
+
 
 @source "./app/**/*.{js,ts,jsx,tsx,mdx}";
 @source "./components/**/*.{js,ts,jsx,tsx,mdx}";
@@ -186,13 +188,13 @@
 /* old */
 
 body {
-  margin: 0;
+  /* margin: 0;
   font-family:
     -apple-system, "SF Pro", BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -moz-osx-font-smoothing: grayscale; */
 }
 
 code {

@@ -70,6 +70,7 @@ export function ErrorBoundary() {
 }
 
 function MainApp() {
+  console.log("🏠 MainApp render", new Date().toISOString());
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isOnTosPage = useIsOnTosPage();
@@ -227,7 +228,7 @@ function MainApp() {
     <SidebarProvider>
       <div
         data-testid="root-layout"
-        className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
+        className="bg-base h-screen lg:min-w-[1024px] flex flex-col md:flex-row"
       >
         <AppSidebar />
 
@@ -237,7 +238,7 @@ function MainApp() {
           </header>
           <div
             id="root-outlet"
-            className="flex-1 w-full relative overflow-auto"
+            className="flex-1 w-full relative overflow-auto p-3"
           >
             {config.data?.MAINTENANCE && (
               <MaintenanceBanner

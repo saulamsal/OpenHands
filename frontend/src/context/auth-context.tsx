@@ -34,6 +34,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth context and check for existing session
   useEffect(() => {
+    console.log(
+      "[AuthContext] useEffect triggered, isInitialized:",
+      isInitialized,
+    );
     if (isInitialized) {
       console.log("[AuthContext] Already initialized, skipping");
       return;
@@ -50,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Always try to load user data - cookies will be sent automatically
     console.log("[AuthContext] Checking for existing session");
     loadUserData();
-  }, [isInitialized]);
+  }, []);
 
   const loadUserData = async () => {
     try {

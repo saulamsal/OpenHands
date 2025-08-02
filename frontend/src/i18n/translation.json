@@ -1232,20 +1232,20 @@
         "uk": "Щоб розпочати роботу з запропонованими завданнями, підключіть свій обліковий запис GitHub, GitLab або Bitbucket."
     },
     "HOME$LETS_START_BUILDING": {
-        "en": "Let's Start Building!",
-        "ja": "開発を始めましょう！",
-        "zh-CN": "让我们开始开发！",
-        "zh-TW": "讓我們開始開發！",
-        "ko-KR": "개발을 시작합시다!",
-        "no": "La oss begynne å bygge!",
-        "it": "Iniziamo a costruire!",
-        "pt": "Vamos começar a construir!",
-        "es": "¡Comencemos a construir!",
-        "ar": "لنبدأ البناء!",
-        "fr": "Commençons à construire !",
-        "tr": "Hadi İnşa Etmeye Başlayalım!",
-        "de": "Lass uns anfangen zu bauen!",
-        "uk": "Почнімо будувати!"
+        "en": "Let’s build magic.",
+        "ja": "魔法を生み出しましょう。",
+        "zh-CN": "让我们创造魔法。",
+        "zh-TW": "讓我們創造魔法。",
+        "ko-KR": "마법을 만들어 봅시다.",
+        "no": "La oss skape magi.",
+        "it": "Creiamo magia.",
+        "pt": "Vamos criar mágica.",
+        "es": "Hagamos magia.",
+        "ar": "لنصنع السحر.",
+        "fr": "Créons de la magie.",
+        "tr": "Haydi sihir yaratalım.",
+        "de": "Lasst uns Magie erschaffen.",
+        "uk": "Давайте творити магію."
     },
     "HOME$OPENHANDS_DESCRIPTION": {
         "en": "OpenHands makes it easy to build and maintain software using AI-driven development.",
@@ -4736,7 +4736,7 @@
         "uk": "Агента призупинено."
     },
     "LANDING$TITLE": {
-        "en": "Let's start building!",
+        "en": "Let’s build magic.",
         "ja": "開発を始めましょう！",
         "zh-CN": "让我们开始构建！",
         "zh-TW": "讓我們開始建構！",

@@ -148,140 +148,156 @@ export function WsClientProvider({
   const { data: conversation, refetch: refetchConversation } =
     useActiveConversation();
 
-  function send(event: Record<string, unknown>) {
+  const send = React.useCallback((event: Record<string, unknown>) => {
     if (!sioRef.current) {
       EventLogger.error("WebSocket is not connected.");
       return;
     }
     sioRef.current.emit("oh_user_action", event);
-  }
+  }, []);
 
-  function handleConnect() {
+  const handleConnect = React.useCallback(() => {
     setWebSocketStatus("CONNECTED");
     removeErrorMessage();
-  }
+  }, [removeErrorMessage]);
 
-  function handleMessage(event: Record<string, unknown>) {
-    handleAssistantMessage(event);
+  const handleMessage = React.useCallback(
+    (event: Record<string, unknown>) => {
+      handleAssistantMessage(event);
 
-    if (isOpenHandsEvent(event)) {
-      const isStatusUpdateError =
-        isStatusUpdate(event) && event.type === "error";
+      if (isOpenHandsEvent(event)) {
+        const isStatusUpdateError =
+          isStatusUpdate(event) && event.type === "error";
 
-      const isAgentStateChangeError =
-        isAgentStateChangeObservation(event) &&
-        event.extras.agent_state === "error";
+        const isAgentStateChangeError =
+          isAgentStateChangeObservation(event) &&
+          event.extras.agent_state === "error";
 
-      if (isStatusUpdateError || isAgentStateChangeError) {
-        const errorMessage = isStatusUpdate(event)
-          ? event.message
-          : event.extras.reason || "Unknown error";
+        if (isStatusUpdateError || isAgentStateChangeError) {
+          const errorMessage = isStatusUpdate(event)
+            ? event.message
+            : event.extras.reason || "Unknown error";
 
-        trackError({
-          message: errorMessage,
-          source: "chat",
-          metadata: { msgId: event.id },
-        });
-        setErrorMessage(errorMessage);
-
-        return;
-      }
-
-      if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
-        setParsedEvents((prevEvents) => [...prevEvents, event]);
-      }
-
-      if (isErrorObservation(event)) {
-        trackError({
-          message: event.message,
-          source: "chat",
-          metadata: { msgId: event.id },
-        });
-      } else {
-        removeErrorMessage();
-      }
-
-      if (isUserMessage(event)) {
-        removeOptimisticUserMessage();
-      }
-
-      if (isMessageAction(event)) {
-        messageRateHandler.record(new Date().getTime());
-      }
-
-      // Invalidate diffs cache when a file is edited or written
-      if (
-        isFileEditAction(event) ||
-        isFileWriteAction(event) ||
-        isCommandAction(event)
-      ) {
-        queryClient.invalidateQueries(
-          {
-            queryKey: ["file_changes", conversationId],
-          },
-          // Do not refetch if we are still receiving messages at a high rate (e.g., loading an existing conversation)
-          // This prevents unnecessary refetches when the user is still receiving messages
-          { cancelRefetch: false },
-        );
-
-        // Invalidate file diff cache when a file is edited or written
-        if (!isCommandAction(event)) {
-          const cachedConversaton = queryClient.getQueryData<Conversation>([
-            "user",
-            "conversation",
-            conversationId,
-          ]);
-          const clonedRepositoryDirectory =
-            cachedConversaton?.selected_repository?.split("/").pop();
-
-          let fileToInvalidate = event.args.path.replace("/workspace/", "");
-          if (clonedRepositoryDirectory) {
-            fileToInvalidate = fileToInvalidate.replace(
-              `${clonedRepositoryDirectory}/`,
-              "",
-            );
-          }
-
-          queryClient.invalidateQueries({
-            queryKey: ["file_diff", conversationId, fileToInvalidate],
+          trackError({
+            message: errorMessage,
+            source: "chat",
+            metadata: { msgId: event.id },
           });
+          setErrorMessage(errorMessage);
+
+          return;
+        }
+
+        if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
+          setParsedEvents((prevEvents) => [...prevEvents, event]);
+        }
+
+        if (isErrorObservation(event)) {
+          trackError({
+            message: event.message,
+            source: "chat",
+            metadata: { msgId: event.id },
+          });
+        } else {
+          removeErrorMessage();
+        }
+
+        if (isUserMessage(event)) {
+          removeOptimisticUserMessage();
+        }
+
+        if (isMessageAction(event)) {
+          messageRateHandler.record(new Date().getTime());
+        }
+
+        // Invalidate diffs cache when a file is edited or written
+        if (
+          isFileEditAction(event) ||
+          isFileWriteAction(event) ||
+          isCommandAction(event)
+        ) {
+          queryClient.invalidateQueries(
+            {
+              queryKey: ["file_changes", conversationId],
+            },
+            // Do not refetch if we are still receiving messages at a high rate (e.g., loading an existing conversation)
+            // This prevents unnecessary refetches when the user is still receiving messages
+            { cancelRefetch: false },
+          );
+
+          // Invalidate file diff cache when a file is edited or written
+          if (!isCommandAction(event)) {
+            const cachedConversaton = queryClient.getQueryData<Conversation>([
+              "user",
+              "conversation",
+              conversationId,
+            ]);
+            const clonedRepositoryDirectory =
+              cachedConversaton?.selected_repository?.split("/").pop();
+
+            let fileToInvalidate = event.args.path.replace("/workspace/", "");
+            if (clonedRepositoryDirectory) {
+              fileToInvalidate = fileToInvalidate.replace(
+                `${clonedRepositoryDirectory}/`,
+                "",
+              );
+            }
+
+            queryClient.invalidateQueries({
+              queryKey: ["file_diff", conversationId, fileToInvalidate],
+            });
+          }
         }
       }
-    }
 
-    setEvents((prevEvents) => [...prevEvents, event]);
-    if (!Number.isNaN(parseInt(event.id as string, 10))) {
-      lastEventRef.current = event;
-    }
-  }
+      setEvents((prevEvents) => [...prevEvents, event]);
+      if (!Number.isNaN(parseInt(event.id as string, 10))) {
+        lastEventRef.current = event;
+      }
+    },
+    [
+      conversationId,
+      queryClient,
+      messageRateHandler.record,
+      removeOptimisticUserMessage,
+      removeErrorMessage,
+      setErrorMessage,
+    ],
+  );
 
-  function handleDisconnect(data: unknown) {
-    setWebSocketStatus("DISCONNECTED");
-    const sio = sioRef.current;
-    if (!sio) {
-      return;
-    }
-    sio.io.opts.query = sio.io.opts.query || {};
-    sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
-    updateStatusWhenErrorMessagePresent(data);
+  const handleDisconnect = React.useCallback(
+    (data: unknown) => {
+      setWebSocketStatus("DISCONNECTED");
+      const sio = sioRef.current;
+      if (!sio) {
+        return;
+      }
+      sio.io.opts.query = sio.io.opts.query || {};
+      sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
+      updateStatusWhenErrorMessagePresent(data);
 
-    setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
-  }
+      setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
+    },
+    [setErrorMessage],
+  );
 
-  function handleError(data: unknown) {
-    // set status
-    setWebSocketStatus("DISCONNECTED");
-    updateStatusWhenErrorMessagePresent(data);
+  const handleError = React.useCallback(
+    (data: unknown) => {
+      // set status
+      setWebSocketStatus("DISCONNECTED");
+      updateStatusWhenErrorMessagePresent(data);
 
-    setErrorMessage(
-      hasValidMessageProperty(data)
-        ? data.message
-        : "An unknown error occurred on the WebSocket connection.",
-    );
+      setErrorMessage(
+        hasValidMessageProperty(data)
+          ? data.message
+          : "An unknown error occurred on the WebSocket connection.",
+      );
 
-    // check if something went wrong with the conversation.
-    refetchConversation();
-  }
+      // check if something went wrong with the conversation.
+      refetchConversation();
+    },
+    [setErrorMessage, refetchConversation],
+  );
 
   React.useEffect(() => {
     lastEventRef.current = null;
@@ -380,6 +396,7 @@ export function WsClientProvider({
       messageRateHandler.isUnderThreshold,
       events,
       parsedEvents,
+      send,
     ],
   );
 

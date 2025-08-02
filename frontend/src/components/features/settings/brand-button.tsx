@@ -1,4 +1,5 @@
 import { cn } from "#/utils/utils";
+import { Button } from "#/components/shared/buttons/button";
 
 interface BrandButtonProps {
   testId?: string;
@@ -21,9 +22,10 @@ export function BrandButton({
   className,
   onClick,
   startContent,
+  ...props
 }: React.PropsWithChildren<BrandButtonProps>) {
   return (
-    <button
+    <Button
       name={name}
       data-testid={testId}
       disabled={isDisabled}
@@ -40,9 +42,11 @@ export function BrandButton({
         startContent && "flex items-center justify-center gap-2",
         className,
       )}
+      is3d={variant === "primary"}
+      {...props}
     >
       {startContent}
       {children}
-    </button>
+    </Button>
   );
 }

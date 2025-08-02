@@ -77,67 +77,124 @@ export function AppSidebar() {
     location.pathname,
   ]);
 
-  const handleLogout = () => {
+  const handleLogout = React.useCallback(() => {
     // Call both logout functions
     logout();
     authLogout();
-  };
+  }, [logout, authLogout]);
 
-  const handleCreateTeam = (team: Team) => {
-    // Invalidate teams query to refetch
-    queryClient.invalidateQueries({ queryKey: ["teams"] });
-    setShowCreateTeamModal(false);
-  };
+  const handleCreateTeam = React.useCallback(
+    (team: Team) => {
+      // Invalidate teams query to refetch
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      setShowCreateTeamModal(false);
+    },
+    [queryClient],
+  );
+
+  const handleShowCreateTeam = React.useCallback(() => {
+    setShowCreateTeamModal(true);
+  }, []);
+
+  const handleShowSettings = React.useCallback(() => {
+    setSettingsModalIsOpen(true);
+  }, []);
 
   // Add some debugging
   console.log("Current pathname:", location.pathname);
 
-  const menuItems = [
-    {
-      title: "New Project",
-      icon: Plus,
-      isButton: true,
-      disabled: settings?.EMAIL_VERIFIED === false,
-      className: "bg-primary text-primary-foreground hover:bg-primary/90",
-    },
-    {
-      title: "Conversations",
-      icon: MessageSquare,
-      url: "/conversations",
-      isActive:
-        location.pathname === "/conversations" ||
-        location.pathname.startsWith("/conversations/"),
-      disabled: settings?.EMAIL_VERIFIED === false,
-    },
-    ...(shouldHideMicroagentManagement
-      ? []
-      : [
-          {
-            title: "Microagents",
-            icon: Bot,
-            url: "/microagent-management",
-            isActive: location.pathname === "/microagent-management",
-            disabled: settings?.EMAIL_VERIFIED === false,
-          },
-        ]),
-  ];
+  const isConversationsActive = React.useMemo(
+    () =>
+      location.pathname === "/conversations" ||
+      location.pathname.startsWith("/conversations/"),
+    [location.pathname],
+  );
 
-  const footerItems = [
-    {
-      title: "Documentation",
-      icon: BookOpen,
-      url: "/docs",
-      disabled: settings?.EMAIL_VERIFIED === false,
-      isActive: location.pathname.startsWith("/docs"),
-    },
-    {
-      title: "Settings",
-      icon: Settings,
-      onClick: () => setSettingsModalIsOpen(true),
-      disabled: settings?.EMAIL_VERIFIED === false,
-      isActive: location.pathname.startsWith("/settings"),
-    },
-  ];
+  const isMicroagentsActive = React.useMemo(
+    () => location.pathname === "/microagent-management",
+    [location.pathname],
+  );
+
+  const isDocsActive = React.useMemo(
+    () => location.pathname.startsWith("/docs"),
+    [location.pathname],
+  );
+
+  const isSettingsActive = React.useMemo(
+    () => location.pathname.startsWith("/settings"),
+    [location.pathname],
+  );
+
+  const menuItems = React.useMemo(
+    () => [
+      {
+        title: "New Project",
+        icon: Plus,
+        isButton: true,
+        disabled: settings?.EMAIL_VERIFIED === false,
+        className: "bg-primary text-primary-foreground hover:bg-primary/90",
+      },
+      {
+        title: "Conversations",
+        icon: MessageSquare,
+        url: "/conversations",
+        isActive: isConversationsActive,
+        disabled: settings?.EMAIL_VERIFIED === false,
+      },
+      ...(shouldHideMicroagentManagement
+        ? []
+        : [
+            {
+              title: "Microagents",
+              icon: Bot,
+              url: "/microagent-management",
+              isActive: isMicroagentsActive,
+              disabled: settings?.EMAIL_VERIFIED === false,
+            },
+          ]),
+    ],
+    [
+      settings?.EMAIL_VERIFIED,
+      shouldHideMicroagentManagement,
+      isConversationsActive,
+      isMicroagentsActive,
+    ],
+  );
+
+  const footerItems = React.useMemo(
+    () => [
+      {
+        title: "Documentation",
+        icon: BookOpen,
+        url: "/docs",
+        disabled: settings?.EMAIL_VERIFIED === false,
+        isActive: isDocsActive,
+      },
+      {
+        title: "Settings",
+        icon: Settings,
+        onClick: handleShowSettings,
+        disabled: settings?.EMAIL_VERIFIED === false,
+        isActive: isSettingsActive,
+      },
+    ],
+    [
+      settings?.EMAIL_VERIFIED,
+      handleShowSettings,
+      isDocsActive,
+      isSettingsActive,
+    ],
+  );
+
+  const userForActions = React.useMemo(() => {
+    if (user) {
+      return { avatar_url: user.email }; // Use email as fallback avatar
+    }
+    if (gitUser.data) {
+      return { avatar_url: gitUser.data.avatar_url };
+    }
+    return undefined;
+  }, [user, gitUser.data]);
 
   return (
     <>
@@ -156,7 +213,7 @@ export function AppSidebar() {
           {isAuthenticated && state === "expanded" && (
             <div className="px-2">
               <TeamSwitcher
-                onCreateTeam={() => setShowCreateTeamModal(true)}
+                onCreateTeam={handleShowCreateTeam}
                 variant="default"
               />
             </div>
@@ -234,13 +291,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <div className="px-2 py-1">
                     <UserActions
-                      user={
-                        user
-                          ? { avatar_url: user.email } // Use email as fallback avatar
-                          : gitUser.data
-                            ? { avatar_url: gitUser.data.avatar_url }
-                            : undefined
-                      }
+                      user={userForActions}
                       onLogout={handleLogout}
                       isLoading={gitUser.isFetching}
                     />

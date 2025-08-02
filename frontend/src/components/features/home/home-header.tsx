@@ -3,10 +3,10 @@ import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
-import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { ProjectInput } from "#/components/shared/input/project-input";
+import { AnimatedEyeballLogo } from "#/components/shared/animation/animated-eyeball-logo";
 
 export function HomeHeader() {
   const navigate = useNavigate();
@@ -77,11 +77,16 @@ export function HomeHeader() {
 
   return (
     <header className="flex flex-col gap-5">
-      <AllHandsLogo style={{ width: 80, height: 80 }} />
+      <div className="flex flex-col items-center justify-between gap-5">
+      <AnimatedEyeballLogo width={80} height={80} />
 
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
+        <h1 className="text-6xl font-bold tracking-tighter">
+          {t("HOME$LETS_START_BUILDING")}
+        </h1>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        {/* <div className="flex items-center justify-between">
           <BrandButton
             testId="header-launch-button"
             variant="primary"
@@ -92,7 +97,7 @@ export function HomeHeader() {
             {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
             {isCreatingConversation && t("HOME$LOADING")}
           </BrandButton>
-        </div>
+        </div> */}
 
         {/* Project Input Component */}
         <ProjectInput
@@ -105,10 +110,10 @@ export function HomeHeader() {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm max-w-[424px]">
+        {/* <p className="text-sm max-w-[424px]">
           {t("HOME$OPENHANDS_DESCRIPTION")}
-        </p>
-        <p className="text-sm">
+        </p> */}
+        {/* <p className="text-sm">
           {t("HOME$NOT_SURE_HOW_TO_START")}{" "}
           <a
             href="https://docs.all-hands.dev/usage/getting-started"
@@ -118,7 +123,7 @@ export function HomeHeader() {
           >
             {t("HOME$READ_THIS")}
           </a>
-        </p>
+        </p> */}
       </div>
     </header>
   );

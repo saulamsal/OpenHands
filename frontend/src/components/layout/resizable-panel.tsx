@@ -1,4 +1,10 @@
-import React, { CSSProperties, JSX, useEffect, useRef, useState } from "react";
+import React from "react";
+import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+  ImperativePanelHandle,
+} from "react-resizable-panels";
 import {
   VscChevronDown,
   VscChevronLeft,
@@ -13,18 +19,12 @@ export enum Orientation {
   VERTICAL = "vertical",
 }
 
-enum Collapse {
-  COLLAPSED = "collapsed",
-  SPLIT = "split",
-  FILLED = "filled",
-}
-
 type ResizablePanelProps = {
   firstChild: React.ReactNode;
-  firstClassName: string | undefined;
+  firstClassName?: string;
   secondChild: React.ReactNode;
-  secondClassName: string | undefined;
-  className: string | undefined;
+  secondClassName?: string;
+  className?: string;
   orientation: Orientation;
   initialSize: number;
 };
@@ -37,155 +37,92 @@ export function ResizablePanel({
   className,
   orientation,
   initialSize,
-}: ResizablePanelProps): JSX.Element {
-  const [firstSize, setFirstSize] = useState<number>(initialSize);
-  const [dividerPosition, setDividerPosition] = useState<number | null>(null);
-  const firstRef = useRef<HTMLDivElement>(null);
-  const secondRef = useRef<HTMLDivElement>(null);
-  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
+}: ResizablePanelProps) {
+  const firstPanelRef = React.useRef<ImperativePanelHandle>(null);
+  const secondPanelRef = React.useRef<ImperativePanelHandle>(null);
+  const [isFirstCollapsed, setIsFirstCollapsed] = React.useState(false);
+  const [isSecondCollapsed, setIsSecondCollapsed] = React.useState(false);
+
   const isHorizontal = orientation === Orientation.HORIZONTAL;
 
-  useEffect(() => {
-    if (dividerPosition == null || !firstRef.current) {
-      return undefined;
-    }
-    const getFirstSizeFromEvent = (e: MouseEvent) => {
-      const position = isHorizontal ? e.clientX : e.clientY;
-      return firstSize + position - dividerPosition;
-    };
-    const onMouseMove = (e: MouseEvent) => {
-      e.preventDefault();
-      const newFirstSize = `${getFirstSizeFromEvent(e)}px`;
-      const { current } = firstRef;
-      if (current) {
-        if (isHorizontal) {
-          current.style.width = newFirstSize;
-          current.style.minWidth = newFirstSize;
-        } else {
-          current.style.height = newFirstSize;
-          current.style.minHeight = newFirstSize;
-        }
-      }
-    };
-    const onMouseUp = (e: MouseEvent) => {
-      e.preventDefault();
-      if (firstRef.current) {
-        firstRef.current.style.transition = "";
-      }
-      if (secondRef.current) {
-        secondRef.current.style.transition = "";
-      }
-      setFirstSize(getFirstSizeFromEvent(e));
-      setDividerPosition(null);
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [dividerPosition, firstSize, orientation]);
+  // Convert pixel size to percentage (assuming container is roughly 1000px wide/high)
+  const initialSizePercent = Math.min(
+    Math.max((initialSize / 1000) * 100, 10),
+    90,
+  );
+  const secondSizePercent = 100 - initialSizePercent;
 
-  const onMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (firstRef.current) {
-      firstRef.current.style.transition = "none";
-    }
-    if (secondRef.current) {
-      secondRef.current.style.transition = "none";
-    }
-    const position = isHorizontal ? e.clientX : e.clientY;
-    setDividerPosition(position);
-  };
-
-  const getStyleForFirst = () => {
-    const style: CSSProperties = { overflow: "hidden" };
-    if (collapse === Collapse.COLLAPSED) {
-      style.opacity = 0;
-      style.width = 0;
-      style.minWidth = 0;
-      style.height = 0;
-      style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      const firstSizePx = `${firstSize}px`;
-      if (isHorizontal) {
-        style.width = firstSizePx;
-        style.minWidth = firstSizePx;
-      } else {
-        style.height = firstSizePx;
-        style.minHeight = firstSizePx;
-      }
+  const handleCollapseFirst = () => {
+    if (isFirstCollapsed) {
+      firstPanelRef.current?.expand();
+      setIsFirstCollapsed(false);
     } else {
-      style.flexGrow = 1;
-    }
-    return style;
-  };
-
-  const getStyleForSecond = () => {
-    const style: CSSProperties = { overflow: "hidden" };
-    if (collapse === Collapse.FILLED) {
-      style.opacity = 0;
-      style.width = 0;
-      style.minWidth = 0;
-      style.height = 0;
-      style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      style.flexGrow = 1;
-    } else {
-      style.flexGrow = 1;
-    }
-    return style;
-  };
-
-  const onCollapse = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.COLLAPSED);
-    } else {
-      setCollapse(Collapse.SPLIT);
+      firstPanelRef.current?.collapse();
+      setIsFirstCollapsed(true);
     }
   };
 
-  const onExpand = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.FILLED);
+  const handleCollapseSecond = () => {
+    if (isSecondCollapsed) {
+      secondPanelRef.current?.expand();
+      setIsSecondCollapsed(false);
     } else {
-      setCollapse(Collapse.SPLIT);
+      secondPanelRef.current?.collapse();
+      setIsSecondCollapsed(true);
     }
   };
 
   return (
-    <div className={twMerge("flex", !isHorizontal && "flex-col", className)}>
-      <div
-        ref={firstRef}
-        className={twMerge(firstClassName, "transition-all ease-soft-spring")}
-        style={getStyleForFirst()}
-      >
-        {firstChild}
-      </div>
-      <div
-        className={`${isHorizontal ? "cursor-ew-resize w-3 flex-col" : "cursor-ns-resize h-3 flex-row"} shrink-0 flex justify-center items-center`}
-        onMouseDown={collapse === Collapse.SPLIT ? onMouseDown : undefined}
-      >
-        <IconButton
-          icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
-          ariaLabel="Collapse"
-          onClick={onCollapse}
-        />
-        <IconButton
-          icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
-          ariaLabel="Expand"
-          onClick={onExpand}
-        />
-      </div>
-      <div
-        ref={secondRef}
-        className={twMerge(secondClassName, "transition-all ease-soft-spring")}
-        style={getStyleForSecond()}
-      >
-        {secondChild}
-      </div>
+    <div className={twMerge("flex h-full w-full", className)}>
+      <PanelGroup direction={isHorizontal ? "horizontal" : "vertical"}>
+        <Panel
+          ref={firstPanelRef}
+          defaultSize={initialSizePercent}
+          collapsible
+          minSize={10}
+          onCollapse={() => setIsFirstCollapsed(true)}
+          onExpand={() => setIsFirstCollapsed(false)}
+          className={twMerge(firstClassName, "transition-all ease-soft-spring")}
+        >
+          {firstChild}
+        </Panel>
+
+        <PanelResizeHandle
+          className={`group ${
+            isHorizontal
+              ? "w-3 cursor-ew-resize flex-col"
+              : "h-3 cursor-ns-resize flex-row"
+          } shrink-0 flex justify-center items-center`}
+        >
+          <div className="flex items-center justify-center gap-1">
+            <IconButton
+              icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
+              ariaLabel="Collapse first panel"
+              onClick={handleCollapseFirst}
+            />
+            <IconButton
+              icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
+              ariaLabel="Collapse second panel"
+              onClick={handleCollapseSecond}
+            />
+          </div>
+        </PanelResizeHandle>
+
+        <Panel
+          ref={secondPanelRef}
+          defaultSize={secondSizePercent}
+          collapsible
+          minSize={10}
+          onCollapse={() => setIsSecondCollapsed(true)}
+          onExpand={() => setIsSecondCollapsed(false)}
+          className={twMerge(
+            secondClassName,
+            "transition-all ease-soft-spring",
+          )}
+        >
+          {secondChild}
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }
