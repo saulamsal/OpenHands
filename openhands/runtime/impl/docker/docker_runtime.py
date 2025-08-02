@@ -516,7 +516,7 @@ class DockerRuntime(ActionExecutionClient):
 
 
     async def _init_workspace_manager(self) -> None:
-        """Initialize workspace manager with simplified paths - mount handles isolation."""
+        """Initialize workspace manager with HOST-side path for proper file watching."""
         try:
             # Check if workspace storage is enabled
             if not self.config.workspace_storage_type:
@@ -526,22 +526,32 @@ class DockerRuntime(ActionExecutionClient):
             # Initialize storage
             storage = self._get_workspace_storage()
             
-            # Create workspace manager with simple /workspace path - mount provides isolation
+            # CRITICAL: Use HOST-side conversation directory for file watching
+            workspace_base = self.config.workspace_mount_path or "./workspace"
+            host_workspace_path = os.path.join(
+                os.path.abspath(workspace_base),
+                "conversations",
+                self.user_id or "default",
+                self.sid
+            )
+            
+            # Create workspace manager with HOST path for proper file watching
             self.workspace_manager = WorkspaceManager(
                 storage=storage,
                 conversation_id=self.sid,
                 user_id=self.user_id or 'default',
-                workspace_path='/workspace',  # Simplified!
+                workspace_path=host_workspace_path,  # HOST path for file watching!
                 backup_interval=self.config.workspace_backup_interval,
             )
             
             # Initialize workspace (download existing files or create new)
             await self.workspace_manager.initialize()
             
-            self.log('info', f'Workspace manager initialized for conversation {self.sid}')
+            self.log('info', f'🔄 Workspace manager initialized for conversation {self.sid}')
+            self.log('info', f'📁 File watching HOST directory: {host_workspace_path}')
             
         except Exception as e:
-            self.log('error', f'Failed to initialize workspace manager: {e}')
+            self.log('error', f'❌ Failed to initialize workspace manager: {e}')
             # Don't fail the runtime if workspace manager fails
             self.workspace_manager = None
 

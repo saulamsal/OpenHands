@@ -108,9 +108,9 @@ class S3WorkspaceStorage(WorkspaceStorage):
         """Sync wrapper for S3 head_object."""
         return self.client.head_object(Bucket=self.bucket, Key=key)
 
-    def _list_objects_v2(self, prefix: str = '', **kwargs) -> dict:
+    def _list_objects_v2(self, **kwargs) -> dict:
         """Sync wrapper for S3 list_objects_v2."""
-        return self.client.list_objects_v2(Bucket=self.bucket, Prefix=prefix, **kwargs)
+        return self.client.list_objects_v2(Bucket=self.bucket, **kwargs)
 
     def _delete_objects(self, objects: list) -> dict:
         """Sync wrapper for S3 delete_objects."""

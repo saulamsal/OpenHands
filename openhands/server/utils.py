@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import (
@@ -11,16 +12,20 @@ from openhands.server.shared import (
 from openhands.server.user_auth import get_user_id
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.database.session import get_async_session
 
 
-async def get_conversation_store(request: Request) -> ConversationStore | None:
+async def get_conversation_store(
+    request: Request, 
+    db_session: AsyncSession = Depends(get_async_session)
+) -> ConversationStore | None:
     conversation_store: ConversationStore | None = getattr(
         request.state, 'conversation_store', None
     )
     if conversation_store:
         return conversation_store
     user_id = await get_user_id(request)
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id, db_session)
     request.state.conversation_store = conversation_store
     return conversation_store
 
