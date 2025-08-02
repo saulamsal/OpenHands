@@ -13,7 +13,8 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
-import { EnhancedSidebar } from "#/components/features/sidebar/enhanced-sidebar";
+import { AppSidebar } from "#/components/features/sidebar/app-sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "#/components/ui/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { EnhancedAuthModal } from "#/components/features/auth/enhanced-auth-modal";
 import { useAuth } from "#/context/auth-context";
@@ -219,22 +220,31 @@ function MainApp() {
   const renderEnhancedAuthModal = false;
 
   return (
-    <div
-      data-testid="root-layout"
-      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
-    >
-      <EnhancedSidebar />
-
+    <SidebarProvider>
       <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
+        data-testid="root-layout"
+        className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
       >
-        {config.data?.MAINTENANCE && (
-          <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
-        )}
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
+        <AppSidebar />
+
+        <SidebarInset>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+          </header>
+          <div
+            id="root-outlet"
+            className="flex-1 w-full relative overflow-auto"
+          >
+            {config.data?.MAINTENANCE && (
+              <MaintenanceBanner
+                startTime={config.data.MAINTENANCE.startTime}
+              />
+            )}
+            <EmailVerificationGuard>
+              <Outlet />
+            </EmailVerificationGuard>
+          </div>
+        </SidebarInset>
       </div>
 
       {renderAuthModal && (
@@ -255,7 +265,7 @@ function MainApp() {
       {config.data?.FEATURE_FLAGS.ENABLE_BILLING && settings?.IS_NEW_USER && (
         <SetupPaymentModal />
       )}
-    </div>
+    </SidebarProvider>
   );
 }
 
