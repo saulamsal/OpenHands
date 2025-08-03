@@ -38,6 +38,23 @@ from openhands.server.user_auth import (
 app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
 
 
+def get_external_auth_id(provider_tokens: PROVIDER_TOKEN_TYPE | None, fallback_user_id: str | None) -> str | None:
+    """Extract the provider user ID from provider tokens, falling back to internal user ID.
+    
+    Args:
+        provider_tokens: Provider tokens containing user IDs from providers like GitHub
+        fallback_user_id: Internal OpenHands user ID to use as fallback
+        
+    Returns:
+        Provider user ID (e.g., GitHub user ID) if available, otherwise fallback user ID
+    """
+    if provider_tokens:
+        for provider_token in provider_tokens.values():
+            if provider_token.user_id:
+                return provider_token.user_id
+    return fallback_user_id
+
+
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
@@ -46,14 +63,16 @@ async def get_user_repositories(
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
     if provider_tokens:
+        external_auth_id = get_external_auth_id(provider_tokens, user_id)
+        
         client = ProviderHandler(
             provider_tokens=provider_tokens,
             external_auth_token=access_token,
-            external_auth_id=user_id,
+            external_auth_id=external_auth_id,
         )
 
         try:
-            return await client.get_repositories(sort, server_config.app_mode)
+            return await client.get_repositories(sort)
 
         except AuthenticationError as e:
             logger.info(
@@ -86,8 +105,12 @@ async def get_user(
     user_id: str | None = Depends(get_user_id),
 ) -> User | JSONResponse:
     if provider_tokens:
+        external_auth_id = get_external_auth_id(provider_tokens, user_id)
+        
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens, 
+            external_auth_token=access_token,
+            external_auth_id=external_auth_id,
         )
 
         try:
@@ -129,8 +152,12 @@ async def search_repositories(
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
     if provider_tokens:
+        external_auth_id = get_external_auth_id(provider_tokens, user_id)
+        
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens, 
+            external_auth_token=access_token,
+            external_auth_id=external_auth_id,
         )
         try:
             repos: list[Repository] = await client.search_repositories(
@@ -172,8 +199,12 @@ async def get_suggested_tasks(
     - Issues assigned to the user.
     """
     if provider_tokens:
+        external_auth_id = get_external_auth_id(provider_tokens, user_id)
+        
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens, 
+            external_auth_token=access_token,
+            external_auth_id=external_auth_id,
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
@@ -214,8 +245,12 @@ async def get_repository_branches(
         A list of branches for the repository
     """
     if provider_tokens:
+        external_auth_id = get_external_auth_id(provider_tokens, user_id)
+        
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens, 
+            external_auth_token=access_token,
+            external_auth_id=external_auth_id,
         )
         try:
             branches: list[Branch] = await client.get_branches(repository)
@@ -327,11 +362,13 @@ async def _verify_repository_access(
     Raises:
         AuthenticationError: If authentication fails
     """
+    external_auth_id = get_external_auth_id(provider_tokens, user_id)
+    
     provider_handler = ProviderHandler(
         provider_tokens=provider_tokens
         or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
         external_auth_token=access_token,
-        external_auth_id=user_id,
+        external_auth_id=external_auth_id,
     )
 
     repository = await provider_handler.verify_repo_provider(repository_name)
@@ -521,11 +558,13 @@ async def get_repository_microagents(
         )
 
         # Construct authenticated git URL using provider handler
+        external_auth_id = get_external_auth_id(provider_tokens, user_id)
+        
         provider_handler = ProviderHandler(
             provider_tokens=provider_tokens
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
             external_auth_token=access_token,
-            external_auth_id=user_id,
+            external_auth_id=external_auth_id,
         )
         remote_url = await provider_handler.get_authenticated_git_url(repository_name)
 

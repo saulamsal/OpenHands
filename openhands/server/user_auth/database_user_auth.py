@@ -6,6 +6,8 @@ similar to Laravel Jetstream.
 
 from dataclasses import dataclass
 from typing import Optional
+import asyncio
+import weakref
 
 from fastapi import Depends, Request
 from pydantic import SecretStr
@@ -29,6 +31,25 @@ from fastapi import HTTPException, status
 import uuid
 
 
+def _cleanup_session(session_ref):
+    """Cleanup function for session when the UserAuth instance is garbage collected."""
+    try:
+        session = session_ref()
+        if session and not session.is_closed:
+            # Schedule session cleanup in the event loop
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(session.close())
+                else:
+                    # If no loop is running, we can't clean up asynchronously
+                    logger.warning("Cannot clean up database session: no event loop running")
+            except Exception as e:
+                logger.warning(f"Error cleaning up database session: {e}")
+    except Exception as e:
+        logger.warning(f"Error in session cleanup finalizer: {e}")
+
+
 @dataclass
 class DatabaseUserAuth(UserAuth):
     """Database-backed user authentication mechanism.
@@ -44,6 +65,20 @@ class DatabaseUserAuth(UserAuth):
     _settings_store: SettingsStore | None = None
     _secrets_store: SecretsStore | None = None
     _user_secrets: UserSecrets | None = None
+    
+    def __post_init__(self):
+        """Set up session cleanup using weakref finalizer."""
+        if self.db_session:
+            # Use weakref to ensure session is cleaned up when this instance is garbage collected
+            self._finalizer = weakref.finalize(self, _cleanup_session, weakref.ref(self.db_session))
+    
+    async def close(self):
+        """Manually close the database session."""
+        if self.db_session and not self.db_session.is_closed:
+            await self.db_session.close()
+            # Disable the finalizer since we manually closed the session
+            if hasattr(self, '_finalizer'):
+                self._finalizer.detach()
     
     async def get_user_id(self) -> str | None:
         """Get the unique identifier for the current user."""
@@ -128,10 +163,11 @@ class DatabaseUserAuth(UserAuth):
         We need to handle both authenticated and unauthenticated requests.
         """
         from fastapi import HTTPException
+        from openhands.storage.database.session import get_async_session_maker
         
-        # Get database session
-        async_session_gen = get_async_session()
-        db_session = await anext(async_session_gen)
+        # Get database session using session maker - session will be managed by the request lifecycle
+        async_session_maker = get_async_session_maker()
+        db_session = async_session_maker()
         
         # Determine auth type from request
         auth_header = request.headers.get("Authorization", "")
@@ -180,11 +216,12 @@ class DatabaseUserAuth(UserAuth):
                         user = await user_db.get(user_id)
                         if user and user.is_active:
                             logger.debug(f"User {user_id} authenticated via {auth_type}")
-                            return cls(
+                            user_auth = cls(
                                 current_user=user,
                                 db_session=db_session,
                                 auth_type=auth_type,
                             )
+                            return user_auth
                 except Exception as e:
                     logger.debug(f"Token validation failed: {e}")
                     pass
@@ -216,6 +253,8 @@ class AnonymousDatabaseUserAuth(DatabaseUserAuth):
         self._settings_store = None
         self._secrets_store = None
         self._user_secrets = None
+        # Set up session cleanup for anonymous auth too
+        self.__post_init__()
     
     async def get_user_id(self) -> str | None:
         """Anonymous users have no ID."""

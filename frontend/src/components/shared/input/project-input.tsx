@@ -157,67 +157,60 @@ export function ProjectInput({
 
       <form onSubmit={handleSubmit}>
 
-        <div className="relative rounded-xl bg-zinc-300/30 p-[1px] dark:bg-zinc-700/30">
+        <div className="relative rounded-xl  p-[1px] ">
 
 
 
 
 
           <div
-            className="relative flex items-end bg-muted rounded-xl shadow-sm focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-primary focus-within:border-primary dark:focus-within:border-primary transition-colors cursor-text"
+            className={cn(
+              "flex flex-col w-full relative rounded-2xl border-1  bg-muted  transition-all duration-300 ease-in-out",
+              isFocused ? "border-primary dark:border-primary shadow-lg" : "border-transparent ",
+              className,
+            )}
             onClick={handleClick}
           >
-
-
-            {/* Textarea field with animated placeholder */}
-            <div className="relative flex-1 flex flex-col">
-              {/* Textarea with animated placeholder */}
-              <div className="relative flex-1">
-                {!value.trim() && (
-                  <div className="absolute left-2 top-3 text-lg text-gray-500 dark:text-gray-400 pointer-events-none select-none flex items-center gap-2">
-                    <TextLoop
-                      interval={3}
-                      trigger={!value.trim()}
-                      onIndexChange={handleIndexChange}
-                    >
-                      {suggestions.map((suggestion, index) => (
-                        <span key={index} className="flex items-center gap-2">
-                          {suggestion}
-                          <span className="inline-flex items-center rounded-md border border-color-muted-foreground bg-muted px-1.5 py-0.5 text-sm text-color-foreground font-mono">
-                            tab
-                          </span>
+            <div className="relative flex-1">
+              {!value.trim() && (
+                <div className="absolute left-2 top-3 text-lg text-gray-500 dark:text-gray-400 pointer-events-none select-none flex items-center gap-2">
+                  <TextLoop
+                    interval={3}
+                    trigger={!value.trim()}
+                    onIndexChange={handleIndexChange}
+                  >
+                    {suggestions.map((suggestion, index) => (
+                      <span key={index} className="flex items-center gap-2">
+                        {suggestion}
+                        <span className="inline-flex items-center rounded-md border border-color-muted-foreground bg-muted px-1.5 py-0.5 text-sm text-color-foreground font-mono">
+                          tab
                         </span>
-                      ))}
-                    </TextLoop>
-                  </div>
+                      </span>
+                    ))}
+                  </TextLoop>
+                </div>
+              )}
+              <textarea
+                ref={textareaRef}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                placeholder=""
+                disabled={disabled}
+                rows={1}
+                style={{ minHeight: "90px" }}
+                className={cn(
+                  "z-10 relative w-full h-full py-3 px-2 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 bg-transparent border-none outline-none resize-none overflow-y-auto",
+                  disabled && "opacity-50 cursor-not-allowed",
                 )}
-                <textarea
-                  ref={textareaRef}
-                  value={value}
-                  onChange={(e) => onChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  placeholder=""
-                  disabled={disabled}
-                  rows={1}
-                  style={{ minHeight: "90px" }}
-                  className={cn(
-                    "z-10 relative w-full h-full py-3 px-2 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 bg-transparent border-none outline-none resize-none overflow-y-auto",
-                    disabled && "opacity-50 cursor-not-allowed",
-                  )}
-                />
-              </div>
+              />
             </div>
 
-
-
-
-            {/* Action buttons on the right */}
-            <div className="flex flex-row items-end self-end z-10 p-1 relative w-full">
-
+            <div className="flex flex-row items-center self-end z-10 p-1 relative">
               <div className="flex-1">
-              <button
+                <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onAttach?.() }}
                   disabled={disabled || (mode === 'AGENTIC' && !agenticQaTest) || mode === 'CHAT'}
@@ -229,14 +222,10 @@ export function ProjectInput({
                 >
                   <FiPaperclip size={16} />
                 </button>
-
               </div>
-
 
               <div className="flex flex-row mx-2 gap-2">
-              <div className="">
-              {renderModeDropdown()}
-              </div>
+                {renderModeDropdown()}
                 <button
                   type="submit"
                   disabled={disabled || !value.trim()}
@@ -252,7 +241,6 @@ export function ProjectInput({
                 </button>
               </div>
             </div>
-
           </div>
         </div>
 

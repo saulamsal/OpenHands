@@ -73,16 +73,46 @@ def process_token_validation_result(
 async def check_provider_tokens(
     incoming_provider_tokens: POSTProviderModel,
     existing_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-) -> str:
+) -> tuple[str, dict[ProviderType, str]]:
+    """Check provider tokens and return validation message and provider user IDs.
+    
+    Returns:
+        tuple: (error_message, provider_user_ids) where provider_user_ids maps 
+               ProviderType to the provider's user ID (e.g., GitHub user ID)
+    """
     msg = ''
+    provider_user_ids: dict[ProviderType, str] = {}
+    
     if incoming_provider_tokens.provider_tokens:
-        # Determine whether tokens are valid
+        # Determine whether tokens are valid and fetch user IDs
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
             if token_value.token:
                 confirmed_token_type = await validate_provider_token(
                     token_value.token, token_value.host
                 )  # FE always sends latest host
                 msg = process_token_validation_result(confirmed_token_type, token_type)
+                
+                # If token is valid, fetch the provider user ID
+                if not msg and confirmed_token_type == token_type:
+                    try:
+                        if token_type == ProviderType.GITHUB:
+                            from openhands.integrations.github.github_service import GitHubService
+                            service = GitHubService(token=token_value.token, base_domain=token_value.host)
+                            user = await service.get_user()
+                            provider_user_ids[token_type] = user.id
+                        elif token_type == ProviderType.GITLAB:
+                            from openhands.integrations.gitlab.gitlab_service import GitLabService
+                            service = GitLabService(token=token_value.token, base_domain=token_value.host)
+                            user = await service.get_user()
+                            provider_user_ids[token_type] = user.id
+                        elif token_type == ProviderType.BITBUCKET:
+                            from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
+                            service = BitBucketService(token=token_value.token, base_domain=token_value.host)
+                            user = await service.get_user()
+                            provider_user_ids[token_type] = user.id
+                    except Exception as e:
+                        logger.warning(f'Failed to get user ID for {token_type.value}: {e}')
+                        # Don't fail the validation if we can't get user ID, just log it
 
             existing_token = (
                 existing_provider_tokens.get(token_type, None)
@@ -102,7 +132,7 @@ async def check_provider_tokens(
                         confirmed_token_type, token_type
                     )
 
-    return msg
+    return msg, provider_user_ids
 
 
 @app.post('/add-git-providers')
@@ -112,7 +142,7 @@ async def store_provider_tokens(
     secrets_store: SecretsStore = Depends(get_secrets_store),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
 ) -> JSONResponse:
-    provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
+    provider_err_msg, provider_user_ids = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
         # We don't have direct access to user_id here, but we can log the provider info
         logger.info(
@@ -138,9 +168,15 @@ async def store_provider_tokens(
                     if existing_token and existing_token.token:
                         provider_info.provider_tokens[provider] = existing_token
 
+                # Update token with host and provider user ID if available
+                update_data = {'host': token_value.host}
+                if provider in provider_user_ids:
+                    update_data['user_id'] = provider_user_ids[provider]
+                    logger.info(f'Storing {provider.value} token with user_id: {provider_user_ids[provider]}')
+                
                 provider_info.provider_tokens[provider] = provider_info.provider_tokens[
                     provider
-                ].model_copy(update={'host': token_value.host})
+                ].model_copy(update=update_data)
 
         updated_secrets = user_secrets.model_copy(
             update={'provider_tokens': provider_info.provider_tokens}
