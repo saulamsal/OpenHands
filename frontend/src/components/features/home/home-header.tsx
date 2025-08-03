@@ -7,6 +7,9 @@ import { BrandButton } from "../settings/brand-button";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { ProjectInput } from "#/components/shared/input/project-input";
+import { InteractionMode } from '#/components/shared/mode-selector';
+import { ModeSelectionModal } from '#/components/shared/modals/mode-selection-modal';
+import { Button } from '#/components/ui/button';
 import { AnimatedEyeballLogo } from "#/components/shared/animation/animated-eyeball-logo";
 import { SegmentedControl } from "#/components/shared/segmented-control";
 import { RepositorySelectionForm } from "./repo-selection-form";
@@ -14,6 +17,24 @@ import { ConnectToProviderMessage } from "./connect-to-provider-message";
 import { BaseModal } from "#/components/shared/modals/base-modal/base-modal";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
+import { QuickSuggestions } from './quick-suggestions';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu';
+import { SiExpo, SiNextdotjs, SiSvelte, SiVuedotjs } from 'react-icons/si';
+import { VscWand } from 'react-icons/vsc';
+import { ChevronDown } from 'lucide-react';
+import { TextParticle } from "../../../../components/twenty-first/text-particle";
+
+
+
+const iconClassName = "h-5 w-5";
+
+const frameworks = [
+  { key: 'auto', label: 'Auto', icon: <VscWand className={iconClassName} />, description: 'Automatically detect framework' },
+  { key: 'expo', label: 'Expo', icon: <SiExpo className={iconClassName} />, description: 'React Native with Expo' },
+  { key: 'nextjs', label: 'Next.js', icon: <SiNextdotjs className={iconClassName} />, description: 'React framework for production', disabled: true },
+  { key: 'vuejs', label: 'Vue.js', icon: <SiVuedotjs className={iconClassName} />, description: 'Progressive JavaScript framework', disabled: true },
+  { key: 'svelte', label: 'Svelte', icon: <SiSvelte className={iconClassName} />, description: 'Cybernetically enhanced web apps', disabled: true },
+];
 
 export function HomeHeader() {
   const navigate = useNavigate();
@@ -32,6 +53,12 @@ export function HomeHeader() {
   const [activeTab, setActiveTab] = React.useState<string>("new-project");
   const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(null);
   const [showRepoModal, setShowRepoModal] = React.useState(false);
+  const [showModeModal, setShowModeModal] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+  const [selectedFramework, setSelectedFramework] = React.useState('expo');
+  const [mode, setMode] = React.useState<InteractionMode>('AGENTIC');
+  const [agenticQaTest, setAgenticQaTest] = React.useState(true);
+  const currentFramework = frameworks.find((f) => f.key === selectedFramework) || frameworks[0];
 
   const providersAreSet = providers.length > 0;
 
@@ -75,12 +102,14 @@ export function HomeHeader() {
     );
   };
 
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = (newMessage: string) => {
+    setMessage(newMessage);
     // For now, just trigger the conversation creation
     // Later we can pass the message to the conversation
-    console.log("[HomeHeader] Message sent:", message);
+    console.log("[HomeHeader] Message sent:", newMessage);
     handleCreateConversation();
   };
+
 
   const handleAttach = () => {
     // TODO: Implement file upload functionality
@@ -90,9 +119,42 @@ export function HomeHeader() {
     );
   };
 
+    const handleFrameworkChange = (frameworkKey: string) => {
+    const framework = frameworks.find(f => f.key === frameworkKey);
+    if (framework && !framework.disabled) {
+      setSelectedFramework(frameworkKey);
+    }
+  };
+
   const tabOptions = [
-    { value: 'new-project', label: 'New Universal App' },
-    { value: 'existing-repository', label: 'Existing Repository' },
+    {
+      value: 'new-project',
+      label: (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 text-sm font-medium tracking-tight">
+              {currentFramework.icon}
+              <span>{currentFramework.label}</span>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {frameworks.map((framework) => (
+              <DropdownMenuItem
+                key={framework.key}
+                onClick={() => handleFrameworkChange(framework.key)}
+                disabled={framework.disabled}
+                className={framework.disabled ? 'opacity-60 cursor-not-allowed' : ''}
+              >
+                {framework.icon}
+                <span className="ml-2">{framework.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+    { value: 'existing-repository', label: 'Existing Repo' },
   ];
 
   const handleTabChange = (value: string) => {
@@ -104,6 +166,18 @@ export function HomeHeader() {
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setMessage(suggestion);
+  };
+
+  const handleModeChange = (newMode: InteractionMode) => {
+    setMode(newMode);
+  };
+
+  const handleAgenticQaTestChange = (enabled: boolean) => {
+    setAgenticQaTest(enabled);
+  };
+
   return (
     <header className="flex flex-col gap-5">
       <div className="flex flex-col items-center justify-between gap-5">
@@ -112,30 +186,55 @@ export function HomeHeader() {
         <h1 className="text-6xl font-bold tracking-tighter">
           {t("HOME$LETS_START_BUILDING")}
         </h1>
+
+
+
       </div>
 
       <div className="flex-auto flex-col gap-6 relative">
         {/* Segmented Control for Tab Selection */}
-        <div className="flex gap-2 flex-col w-auto">
-          <div className="flex">
+        <div className="flex  flex-col w-auto relative gap-2">
+
+
+          <div className="flex items-end gap-2 max-w-2xl">
+            <Button variant="outline" onClick={() => setShowModeModal(true)}>
+              {t(mode === 'AGENTIC' ? 'Agentic' : 'Chat')}
+            </Button>
+            {/* Project Input - Always visible */}
+            <ProjectInput
+              placeholder={activeTab === 'new-project' ? "What are we going to build today?" : selectedRepo ? `Selected: ${selectedRepo.full_name}` : "Click to select a repository..."}
+              onSend={handleSendMessage}
+              onAttach={handleAttach}
+              disabled={isCreatingConversation || (activeTab === 'existing-repository' && !selectedRepo)}
+              className="w-full"
+              value={message}
+              onChange={setMessage}
+              onSuggestionClick={handleSuggestionClick}
+              mode={mode}
+              agenticQaTest={agenticQaTest}
+            />
+          </div>
+
+
+          <div className="flex items-center gap-2">
             <SegmentedControl
               options={tabOptions}
               value={activeTab}
               onValueChange={handleTabChange}
-            // className="w-fit"
+              itemClassName="text-sm font-medium tracking-tight h-8 py-0 my-0"
             />
           </div>
 
-          {/* Project Input - Always visible */}
-          <ProjectInput
-            placeholder={activeTab === 'new-project' ? "What are we going to build today?" : selectedRepo ? `Selected: ${selectedRepo.full_name}` : "Click to select a repository..."}
-            onSend={handleSendMessage}
-            onAttach={handleAttach}
-            disabled={isCreatingConversation || (activeTab === 'existing-repository' && !selectedRepo)}
-            className="max-w-2xl"
-          />
+
+
+
 
         </div>
+
+        <QuickSuggestions onSuggestionClick={handleSuggestionClick} disabled={isCreatingConversation} />
+
+
+
         {/* Repository Selection Modal */}
         <BaseModal
           isOpen={showRepoModal}
@@ -161,6 +260,15 @@ export function HomeHeader() {
             }} />
           )}
         </BaseModal>
+
+        <ModeSelectionModal
+          isOpen={showModeModal}
+          onOpenChange={setShowModeModal}
+          mode={mode}
+          agenticQaTest={agenticQaTest}
+          onModeChange={handleModeChange}
+          onAgenticQaTestChange={handleAgenticQaTestChange}
+        />
       </div>
 
       <div className="flex items-center justify-between">

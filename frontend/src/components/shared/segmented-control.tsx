@@ -2,7 +2,7 @@ import { AnimatedBackground } from '#/../components/motion-primitives/animated-b
 
 interface SegmentedControlOption {
   value: string;
-  label: string;
+  label: React.ReactNode;
 }
 
 interface SegmentedControlProps {
@@ -11,6 +11,7 @@ interface SegmentedControlProps {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   className?: string;
+  itemClassName?: string;
 }
 
 export function SegmentedControl({
@@ -19,6 +20,7 @@ export function SegmentedControl({
   defaultValue,
   onValueChange,
   className = '',
+  itemClassName,
 }: SegmentedControlProps) {
   const handleValueChange = (selectedValue: string | null) => {
     if (selectedValue && onValueChange) {
@@ -44,8 +46,8 @@ export function SegmentedControl({
               data-id={option.value}
               type='button'
               aria-label={`${option.label} view`}
-              className='inline-flex min-w-[120px] items-center justify-center px-4 py-1
-              text-center text-foreground transition-transform active:scale-[0.98]'
+              className={`inline-flex min-w-[120px] items-center justify-center px-4 py-1
+              text-center text-foreground transition-transform active:scale-[0.98] ${itemClassName}`}
             >
               {option.label}
             </button>
