@@ -156,6 +156,7 @@ export interface Conversation {
   url: string | null;
   session_api_key: string | null;
   pr_number?: number[] | null;
+  team_id?: string;
 }
 
 export interface ResultSet<T> {

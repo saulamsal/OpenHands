@@ -15,7 +15,6 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import OpenHands from "#/api/open-hands";
-import TerminalIcon from "#/icons/terminal.svg?react";
 
 export function ConversationTabs() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -79,11 +78,6 @@ export function ConversationTabs() {
             onClick={handleVSCodeClick}
           />
         ) : null,
-      },
-      {
-        label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
-        to: "terminal",
-        icon: <TerminalIcon />,
       },
       { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
       {

@@ -93,6 +93,9 @@ class InitSessionRequest(BaseModel):
     create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
     team_id: str | None = None
+    mode: str | None = None  # "AGENTIC" or "CHAT"
+    agentic_qa_test: bool | None = None
+    framework: str | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -453,6 +456,7 @@ async def _get_conversation_info(
             url=agent_loop_info.url if agent_loop_info else None,
             session_api_key=getattr(agent_loop_info, 'session_api_key', None),
             pr_number=conversation.pr_number,
+            team_id=conversation.team_id,
         )
     except Exception as e:
         logger.error(

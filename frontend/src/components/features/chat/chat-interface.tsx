@@ -32,6 +32,7 @@ import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
+import { InitialDataContext } from "#/wrapper/event-handler";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -44,7 +45,8 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { getErrorMessage } = useWSErrorMessage();
-  const { send, isLoadingMessages, parsedEvents } = useWsClient();
+  const { send, isLoadingMessages, parsedEvents, webSocketStatus } =
+    useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessage();
   const { t } = useTranslation();
@@ -58,6 +60,8 @@ export function ChatInterface() {
     setHitBottom,
   } = useScrollToBottom(scrollRef);
   const { data: config } = useConfig();
+  const initialData = React.useContext(InitialDataContext);
+  const [initialMessageSent, setInitialMessageSent] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
@@ -77,6 +81,102 @@ export function ChatInterface() {
   const errorMessage = getErrorMessage();
 
   const events = parsedEvents.filter(shouldRenderEvent);
+
+  // Send initial message when WebSocket connects
+  React.useEffect(() => {
+    if (
+      webSocketStatus === "CONNECTED" &&
+      initialData?.initialMessage &&
+      !initialMessageSent &&
+      !isLoadingMessages
+    ) {
+      console.log(
+        "[ChatInterface] Sending initial message:",
+        initialData.initialMessage,
+      );
+
+      // Convert File objects to base64 for images and upload files
+      const processAttachments = async () => {
+        const imageUrls: string[] = [];
+        const fileUrls: string[] = [];
+
+        if (initialData.attachments && initialData.attachments.length > 0) {
+          const validationResult = validateFiles(
+            initialData.attachments,
+            config?.SECURITY_ENABLED,
+          );
+          if (!validationResult.valid) {
+            displayErrorToast(validationResult.errors.join(", "));
+            return;
+          }
+
+          const images = initialData.attachments.filter((file) =>
+            file.type.startsWith("image/"),
+          );
+          const files = initialData.attachments.filter(
+            (file) => !file.type.startsWith("image/"),
+          );
+
+          // Convert images to base64
+          for (const image of images) {
+            try {
+              const base64 = await convertImageToBase64(image);
+              imageUrls.push(base64);
+            } catch (error) {
+              console.error("Failed to convert image:", error);
+              displayErrorToast(
+                t(I18nKey.CHAT_INTERFACE$IMAGE_CONVERSION_FAILED),
+              );
+            }
+          }
+
+          // Upload files
+          if (files.length > 0) {
+            try {
+              const uploadedFiles = await uploadFiles(files);
+              fileUrls.push(...uploadedFiles);
+            } catch (error) {
+              console.error("Failed to upload files:", error);
+              displayErrorToast(t(I18nKey.CHAT_INTERFACE$FILE_UPLOAD_FAILED));
+            }
+          }
+        }
+
+        const timestamp = new Date().toISOString();
+        const chatMessage = createChatMessage(
+          initialData.initialMessage,
+          imageUrls,
+          fileUrls,
+          timestamp,
+        );
+
+        setOptimisticUserMessage({
+          content: initialData.initialMessage,
+          image_urls: imageUrls,
+          file_urls: fileUrls,
+          timestamp,
+        });
+
+        send(chatMessage);
+        setInitialMessageSent(true);
+
+        // Clear the initial data from navigation state
+        window.history.replaceState({}, document.title);
+      };
+
+      processAttachments();
+    }
+  }, [
+    webSocketStatus,
+    initialData,
+    initialMessageSent,
+    isLoadingMessages,
+    send,
+    setOptimisticUserMessage,
+    uploadFiles,
+    config?.SECURITY_ENABLED,
+    t,
+  ]);
 
   // Check if there are any substantive agent actions (not just system messages)
   const hasSubstantiveAgentActions = React.useMemo(

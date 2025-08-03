@@ -6,16 +6,13 @@ import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestio
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
 import { Route } from "./+types/home";
-import { requireAuth } from "#/utils/auth.client";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
-export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
-  // Always require authentication (database is the only mode)
-  await requireAuth(request);
-
-  return null;
-};
+export const clientLoader = async ({ request }: Route.ClientLoaderArgs) =>
+  // Don't require authentication on the homepage - let users see the landing page
+  // Authentication will be checked when they try to create a conversation
+  null;
 
 function HomeScreen() {
   const { providers } = useUserProviders();

@@ -252,9 +252,18 @@ class OpenHands {
     return data;
   }
 
-  static async getUserConversations(): Promise<Conversation[]> {
+  static async getUserConversations(teamId?: string): Promise<Conversation[]> {
+    const params = new URLSearchParams();
+    params.append("limit", "20");
+
+    const headers: Record<string, string> = {};
+    if (teamId) {
+      headers["X-Team-Id"] = teamId;
+    }
+
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=20",
+      `/api/conversations?${params.toString()}`,
+      { headers },
     );
     return data.results;
   }
@@ -293,20 +302,63 @@ class OpenHands {
     selected_branch?: string,
     conversationInstructions?: string,
     createMicroagent?: CreateMicroagent,
+    mode?: "AGENTIC" | "CHAT",
+    agenticQaTest?: boolean,
+    framework?: string,
+    attachments?: File[],
+    teamId?: string,
   ): Promise<Conversation> {
-    const body = {
-      repository: selectedRepository,
-      git_provider,
-      selected_branch,
-      initial_user_msg: initialUserMsg,
-      suggested_task,
-      conversation_instructions: conversationInstructions,
-      create_microagent: createMicroagent,
-    };
+    const formData = new FormData();
+
+    // Add regular fields
+    if (selectedRepository) formData.append("repository", selectedRepository);
+    if (git_provider) formData.append("git_provider", git_provider);
+    if (selected_branch) formData.append("selected_branch", selected_branch);
+    if (initialUserMsg) formData.append("initial_user_msg", initialUserMsg);
+    if (suggested_task)
+      formData.append("suggested_task", JSON.stringify(suggested_task));
+    if (conversationInstructions)
+      formData.append("conversation_instructions", conversationInstructions);
+    if (createMicroagent)
+      formData.append("create_microagent", JSON.stringify(createMicroagent));
+    if (mode) formData.append("mode", mode);
+    if (agenticQaTest !== undefined)
+      formData.append("agentic_qa_test", agenticQaTest.toString());
+    if (framework) formData.append("framework", framework);
+
+    // Add attachments
+    if (attachments && attachments.length > 0) {
+      attachments.forEach((file) => {
+        formData.append(`attachments`, file);
+      });
+    }
+
+    const headers: Record<string, string> = {};
+    if (teamId) {
+      headers["X-Team-Id"] = teamId;
+    }
+
+    if (attachments && attachments.length > 0) {
+      headers["Content-Type"] = "multipart/form-data";
+    }
 
     const { data } = await openHands.post<Conversation>(
       "/api/conversations",
-      body,
+      attachments && attachments.length > 0
+        ? formData
+        : {
+            repository: selectedRepository,
+            git_provider,
+            selected_branch,
+            initial_user_msg: initialUserMsg,
+            suggested_task,
+            conversation_instructions: conversationInstructions,
+            create_microagent: createMicroagent,
+            mode,
+            agentic_qa_test: agenticQaTest,
+            framework,
+          },
+      Object.keys(headers).length > 0 ? { headers } : undefined,
     );
 
     return data;

@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useDispatch } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
@@ -31,6 +31,10 @@ import { ConversationTabs } from "#/components/features/conversation/conversatio
 import { requireAuth } from "#/utils/auth.client";
 import { Route } from "./+types/conversation";
 
+const Terminal = React.lazy(
+  () => import("#/components/features/terminal/terminal"),
+);
+
 export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   // Always require authentication (database is the only mode)
   await requireAuth(request);
@@ -45,6 +49,7 @@ function AppContent() {
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const location = useLocation();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -106,7 +111,7 @@ function AppContent() {
   function renderMain() {
     if (width <= 1024) {
       return (
-        <div className="flex flex-col gap-3 overflow-auto w-full">
+        <div className="flex flex-col gap-3 overflow-auto w-full h-full">
           <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px] flex flex-col">
             <div className="shrink-0">
               <Controls
@@ -121,38 +126,61 @@ function AppContent() {
           <div className="h-full w-full min-h-[494px]">
             <ConversationTabs />
           </div>
+          <div className="h-64 w-full rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary">
+            <React.Suspense fallback={<div className="h-full" />}>
+              <Terminal />
+            </React.Suspense>
+          </div>
         </div>
       );
     }
     return (
-      <ResizablePanel
-        orientation={Orientation.HORIZONTAL}
-        className="grow h-full w-full min-h-0 min-w-0"
-        initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary flex flex-col"
-        secondClassName="flex flex-col overflow-hidden"
-        firstChild={
-          <div className="flex flex-col h-full">
-            <div className="shrink-0">
-              <Controls
-                setSecurityOpen={onSecurityModalOpen}
-                showSecurityLock={!!settings?.SECURITY_ANALYZER}
-              />
-            </div>
-            <div className="flex-grow overflow-hidden">
-              <ChatInterface />
-            </div>
-          </div>
-        }
-        secondChild={<ConversationTabs />}
-      />
+      <div className="flex flex-col h-full w-full">
+        <div className="flex-1 min-h-0">
+          <ResizablePanel
+            orientation={Orientation.HORIZONTAL}
+            className="grow h-full w-full min-h-0 min-w-0"
+            initialSize={500}
+            firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary flex flex-col"
+            secondClassName="flex flex-col overflow-hidden"
+            firstChild={
+              <div className="flex flex-col h-full">
+                <div className="shrink-0">
+                  <Controls
+                    setSecurityOpen={onSecurityModalOpen}
+                    showSecurityLock={!!settings?.SECURITY_ANALYZER}
+                  />
+                </div>
+                <div className="flex-grow overflow-hidden">
+                  <ChatInterface />
+                </div>
+              </div>
+            }
+            secondChild={<ConversationTabs />}
+          />
+        </div>
+        <div className="h-64 flex-shrink-0 rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary mt-3">
+          <React.Suspense fallback={<div className="h-full" />}>
+            <Terminal />
+          </React.Suspense>
+        </div>
+      </div>
     );
   }
+
+  // Extract initial conversation data from navigation state
+  const initialData = location.state as {
+    initialMessage?: string;
+    mode?: "AGENTIC" | "CHAT";
+    agenticQaTest?: boolean;
+    framework?: string;
+    attachments?: File[];
+  } | null;
 
   return (
     <WsClientProvider conversationId={conversationId}>
       <ConversationSubscriptionsProvider>
-        <EventHandler>
+        <EventHandler initialData={initialData}>
           <div data-testid="app-route" className="flex flex-col h-full w-full">
             <div className="flex h-full overflow-auto w-full">
               {renderMain()}

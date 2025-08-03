@@ -16,6 +16,10 @@ interface CreateConversationVariables {
   suggestedTask?: SuggestedTask;
   conversationInstructions?: string;
   createMicroagent?: CreateMicroagent;
+  mode?: "AGENTIC" | "CHAT";
+  agenticQaTest?: boolean;
+  framework?: string;
+  attachments?: File[];
 }
 
 export const useCreateConversation = () => {
@@ -31,6 +35,10 @@ export const useCreateConversation = () => {
         suggestedTask,
         conversationInstructions,
         createMicroagent,
+        mode,
+        agenticQaTest,
+        framework,
+        attachments,
       } = variables;
 
       return OpenHands.createConversation(
@@ -41,6 +49,11 @@ export const useCreateConversation = () => {
         repository?.branch,
         conversationInstructions,
         createMicroagent,
+        mode,
+        agenticQaTest,
+        framework,
+        attachments,
+        activeTeam?.id,
       );
     },
     onSuccess: async (_, { query, repository }) => {
@@ -50,7 +63,7 @@ export const useCreateConversation = () => {
         has_repository: !!repository,
       });
       await queryClient.invalidateQueries({
-        queryKey: ["user", "conversations"],
+        queryKey: ["user", "conversations", activeTeam?.id],
       });
     },
   });

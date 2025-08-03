@@ -128,8 +128,9 @@ openHands.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // Don't redirect if we're already on login/register/auth-callback pages
+      // Don't redirect if we're on home page, login, register, or auth-callback pages
       if (
+        window.location.pathname !== "/" &&
         window.location.pathname !== "/login" &&
         window.location.pathname !== "/register" &&
         window.location.pathname !== "/auth/callback" &&

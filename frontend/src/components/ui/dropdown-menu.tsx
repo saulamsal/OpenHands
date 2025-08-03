@@ -130,7 +130,7 @@ export const DropdownMenuItem = React.forwardRef<
 >(({ className, inset, onClick, disabled, ...props }, ref) => {
   const { setOpen } = React.useContext(DropdownMenuContext);
 
-    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
     onClick?.(e);
     setOpen(false);
@@ -141,7 +141,7 @@ export const DropdownMenuItem = React.forwardRef<
       ref={ref}
       role="menuitem"
       onClick={handleClick}
-            className={cn(
+      className={cn(
         "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
         inset && "pl-8",
         disabled && "pointer-events-none opacity-50",

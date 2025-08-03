@@ -191,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(ACTIVE_TEAM_KEY, team.id);
 
     // Invalidate queries that might depend on team context
-    queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
   };
 
   const value: AuthContextValue = {
