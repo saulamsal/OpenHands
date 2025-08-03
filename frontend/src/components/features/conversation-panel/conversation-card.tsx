@@ -20,6 +20,10 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 import { RepositorySelection } from "#/api/open-hands.types";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -100,21 +104,21 @@ export function ConversationCard({
     }
   };
 
-  const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDelete = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
     onDelete?.();
     onContextMenuToggle?.(false);
   };
 
-  const handleStop = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleStop = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
     onStop?.();
     onContextMenuToggle?.(false);
   };
 
-  const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleEdit = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
@@ -122,7 +126,7 @@ export function ConversationCard({
   };
 
   const handleDownloadViaVSCode = async (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: React.MouseEvent<HTMLDivElement>,
   ) => {
     event.preventDefault();
     event.stopPropagation();
@@ -147,19 +151,17 @@ export function ConversationCard({
     onContextMenuToggle?.(false);
   };
 
-  const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDisplayCost = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     setMetricsModalVisible(true);
   };
 
-  const handleShowAgentTools = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleShowAgentTools = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     setSystemModalVisible(true);
   };
 
-  const handleShowMicroagents = (
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
+  const handleShowMicroagents = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     setMicroagentsModalVisible(true);
   };
@@ -222,18 +224,20 @@ export function ConversationCard({
               conversationStatus={conversationStatus}
             />
             {hasContextMenu && (
-              <div className="pl-2">
-                <EllipsisButton
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onContextMenuToggle?.(!contextMenuOpen);
-                  }}
-                />
-              </div>
-            )}
-            <div className="relative">
-              {contextMenuOpen && (
+              <DropdownMenu
+                open={contextMenuOpen}
+                onOpenChange={onContextMenuToggle}
+              >
+                <DropdownMenuTrigger asChild>
+                  <div className="pl-2">
+                    <EllipsisButton
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }}
+                    />
+                  </div>
+                </DropdownMenuTrigger>
                 <ConversationCardContextMenu
                   onClose={() => onContextMenuToggle?.(false)}
                   onDelete={onDelete && handleDelete}
@@ -261,8 +265,8 @@ export function ConversationCard({
                   }
                   position={variant === "compact" ? "top" : "bottom"}
                 />
-              )}
-            </div>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 

@@ -58,4 +58,10 @@ async def get_auth_type(request: Request) -> AuthType | None:
 
 async def get_team_id(request: Request) -> str | None:
     """Get the team ID from the X-Team-Id header"""
-    return request.headers.get('X-Team-Id')
+    # Headers in HTTP are case-insensitive, but FastAPI/Starlette normalizes them to lowercase
+    team_id = request.headers.get('x-team-id') or request.headers.get('X-Team-Id')
+    from openhands.core.logger import openhands_logger as logger
+    logger.info(f"get_team_id - team_id found: {team_id}")
+    logger.info(f"get_team_id - Looking for x-team-id: {request.headers.get('x-team-id')}")
+    logger.info(f"get_team_id - Looking for X-Team-Id: {request.headers.get('X-Team-Id')}")
+    return team_id

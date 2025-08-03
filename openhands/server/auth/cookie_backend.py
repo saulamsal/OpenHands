@@ -201,22 +201,51 @@ class DualTransport(Transport):
         self.scheme = getattr(bearer_transport, 'scheme', None)
     
     async def get_login_response(
-        self, token: str, response: Response
+        self, token: str
     ) -> Any:
         """Set both cookie and return token in response.
         
         Args:
             token: JWT token
-            response: FastAPI response object
             
         Returns:
             Response with cookie set and token in body
         """
-        # Set cookie
-        await self.cookie_transport.get_login_response(token, response)
+        from fastapi import Response
+        from fastapi.responses import JSONResponse
         
-        # Also return token in response body for API clients
-        return {"access_token": token, "token_type": "bearer"}
+        # Create a JSON response with the token data
+        response_data = {"access_token": token, "token_type": "bearer"}
+        response = JSONResponse(content=response_data)
+        
+        # Set authentication cookie on the response
+        response.set_cookie(
+            key=self.cookie_transport.cookie_name,
+            value=token,
+            max_age=self.cookie_transport.cookie_max_age,
+            path=self.cookie_transport.cookie_path,
+            domain=self.cookie_transport.cookie_domain,
+            secure=self.cookie_transport.cookie_secure,
+            httponly=self.cookie_transport.cookie_httponly,
+            samesite=self.cookie_transport.cookie_samesite,
+        )
+        
+        # Also set a CSRF token cookie (not httpOnly so JS can read it)
+        import secrets
+        csrf_token = secrets.token_urlsafe(32)
+        response.set_cookie(
+            key="csrf_token",
+            value=csrf_token,
+            max_age=self.cookie_transport.cookie_max_age,
+            path=self.cookie_transport.cookie_path,
+            domain=self.cookie_transport.cookie_domain,
+            secure=self.cookie_transport.cookie_secure,
+            httponly=False,  # JavaScript needs to read this
+            samesite=self.cookie_transport.cookie_samesite,
+        )
+        
+        # Return the response
+        return response
     
     async def get_logout_response(
         self, response: Response, token: Optional[str] = None

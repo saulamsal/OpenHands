@@ -3,7 +3,6 @@ import { useLocation } from "react-router";
 import { LoadingSpinner } from "../shared/loading-spinner";
 
 // Lazy load all tab components
-const EditorTab = lazy(() => import("#/routes/changes-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
 const JupyterTab = lazy(() => import("#/routes/jupyter-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
@@ -18,11 +17,12 @@ export function TabContent({ conversationPath }: TabContentProps) {
   const currentPath = location.pathname;
 
   // Determine which tab is active based on the current path
-  const isEditorActive = currentPath === conversationPath;
+  const isVSCodeActive =
+    currentPath === conversationPath ||
+    currentPath === `${conversationPath}/vscode`;
   const isBrowserActive = currentPath === `${conversationPath}/browser`;
   const isJupyterActive = currentPath === `${conversationPath}/jupyter`;
   const isServedActive = currentPath === `${conversationPath}/served`;
-  const isVSCodeActive = currentPath === `${conversationPath}/vscode`;
 
   return (
     <div className="h-full w-full relative">
@@ -35,9 +35,9 @@ export function TabContent({ conversationPath }: TabContentProps) {
         }
       >
         <div
-          className={`absolute inset-0 ${isEditorActive ? "block" : "hidden"}`}
+          className={`absolute inset-0 ${isVSCodeActive ? "block" : "hidden"}`}
         >
-          <EditorTab />
+          <VSCodeTab />
         </div>
         <div
           className={`absolute inset-0 ${isBrowserActive ? "block" : "hidden"}`}
@@ -53,11 +53,6 @@ export function TabContent({ conversationPath }: TabContentProps) {
           className={`absolute inset-0 ${isServedActive ? "block" : "hidden"}`}
         >
           <ServedTab />
-        </div>
-        <div
-          className={`absolute inset-0 ${isVSCodeActive ? "block" : "hidden"}`}
-        >
-          <VSCodeTab />
         </div>
       </Suspense>
     </div>

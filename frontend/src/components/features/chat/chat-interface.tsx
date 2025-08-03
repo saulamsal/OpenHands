@@ -280,6 +280,22 @@ export function ChatInterface() {
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
 
+  // Define all callbacks before conditional rendering to follow Rules of Hooks
+  const handleSuggestionClick = React.useCallback(
+    (value: string) => handleSendMessage(value, [], []),
+    [handleSendMessage],
+  );
+
+  const handlePositiveFeedback = React.useCallback(
+    () => onClickShareFeedbackActionButton("positive"),
+    [onClickShareFeedbackActionButton],
+  );
+
+  const handleNegativeFeedback = React.useCallback(
+    () => onClickShareFeedbackActionButton("negative"),
+    [onClickShareFeedbackActionButton],
+  );
+
   // Create a ScrollProvider with the scroll hook values
   const scrollProviderValue = React.useMemo(
     () => ({
@@ -334,26 +350,15 @@ export function ChatInterface() {
           {isWaitingForUserInput &&
             hasSubstantiveAgentActions &&
             !optimisticUserMessage && (
-              <ActionSuggestions
-                onSuggestionsClick={React.useCallback(
-                  (value: string) => handleSendMessage(value, [], []),
-                  [handleSendMessage],
-                )}
-              />
+              <ActionSuggestions onSuggestionsClick={handleSuggestionClick} />
             )}
         </div>
 
         <div className="flex flex-col gap-[6px] px-4 pb-4">
           <div className="flex justify-between relative">
             <TrajectoryActions
-              onPositiveFeedback={React.useCallback(
-                () => onClickShareFeedbackActionButton("positive"),
-                [onClickShareFeedbackActionButton],
-              )}
-              onNegativeFeedback={React.useCallback(
-                () => onClickShareFeedbackActionButton("negative"),
-                [onClickShareFeedbackActionButton],
-              )}
+              onPositiveFeedback={handlePositiveFeedback}
+              onNegativeFeedback={handleNegativeFeedback}
               onExportTrajectory={onClickExportTrajectoryButton}
             />
 

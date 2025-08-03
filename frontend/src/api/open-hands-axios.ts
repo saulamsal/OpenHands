@@ -74,7 +74,7 @@ const getCSRFToken = (): string | null => {
 // Helper function to get active team ID from localStorage
 const getActiveTeamId = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("activeTeamId");
+  return localStorage.getItem("openhands_active_team");
 };
 
 // Set up request interceptor for CSRF token and team ID
@@ -91,11 +91,18 @@ openHands.interceptors.request.use((config) => {
 
   // Add team ID to headers for all requests
   const teamId = getActiveTeamId();
+  console.log("[Axios Interceptor] Team ID from localStorage:", teamId);
+  console.log("[Axios Interceptor] Request URL:", config.url);
+
   if (teamId) {
     // eslint-disable-next-line no-param-reassign
     config.headers["X-Team-Id"] = teamId;
+    console.log("[Axios Interceptor] Added X-Team-Id header:", teamId);
+  } else {
+    console.log("[Axios Interceptor] No team ID found in localStorage");
   }
 
+  console.log("[Axios Interceptor] Final headers:", config.headers);
   return config;
 });
 

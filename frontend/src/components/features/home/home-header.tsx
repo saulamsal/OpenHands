@@ -72,7 +72,7 @@ export function HomeHeader() {
   } = useCreateConversation();
   const isCreatingConversationElsewhere = useIsCreatingConversation();
   const { t } = useTranslation();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, activeTeam } = useAuth();
   const { data: config } = useConfig();
   const { providers } = useUserProviders();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -103,6 +103,7 @@ export function HomeHeader() {
     console.log("[HomeHeader] Launch clicked - Auth state:", {
       isAuthenticated,
       authLoading,
+      activeTeam: activeTeam?.id,
       message: initialMessage || message,
       mode,
       framework: selectedFramework,
@@ -113,6 +114,12 @@ export function HomeHeader() {
     if (!isAuthenticated && !authLoading) {
       console.log("[HomeHeader] Not authenticated, redirecting to login");
       navigate("/login");
+      return;
+    }
+
+    // Wait for teams to load to ensure team_id is sent
+    if (!activeTeam && authLoading) {
+      console.log("[HomeHeader] Waiting for teams to load...");
       return;
     }
 

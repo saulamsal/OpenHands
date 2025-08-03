@@ -256,14 +256,11 @@ class OpenHands {
     const params = new URLSearchParams();
     params.append("limit", "20");
 
-    const headers: Record<string, string> = {};
-    if (teamId) {
-      headers["X-Team-Id"] = teamId;
-    }
+    // Team ID is handled by axios interceptor now
+    console.log("[getUserConversations] Called with teamId:", teamId);
 
     const { data } = await openHands.get<ResultSet<Conversation>>(
       `/api/conversations?${params.toString()}`,
-      { headers },
     );
     return data.results;
   }

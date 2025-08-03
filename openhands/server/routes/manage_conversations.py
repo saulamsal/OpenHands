@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
@@ -232,6 +232,7 @@ async def new_conversation(
 
 @app.get('/conversations')
 async def search_conversations(
+    request: Request,
     page_id: str | None = None,
     limit: int = 20,
     selected_repository: str | None = None,
@@ -241,6 +242,12 @@ async def search_conversations(
     team_id: str | None = Depends(get_team_id),
     db_session: AsyncSession = Depends(get_async_session),
 ) -> ConversationInfoResultSet:
+    # Debug logging
+    logger.info(f"Search conversations - team_id from header: {team_id}")
+    logger.info(f"Search conversations - user_id: {user_id}")
+    logger.info(f"Search conversations - X-Team-Id header: {request.headers.get('X-Team-Id')}")
+    logger.info(f"Search conversations - All headers: {dict(request.headers)}")
+    
     # Create conversation store with injected session
     conversation_store = await ConversationStoreImpl.get_instance(
         config, user_id, db_session
@@ -278,8 +285,10 @@ async def search_conversations(
             continue
 
         # Apply team filter
-        if team_id is not None and conversation.team_id != team_id:
-            continue
+        # Include conversations with NULL team_id for backwards compatibility
+        if team_id is not None:
+            if conversation.team_id is not None and conversation.team_id != team_id:
+                continue
 
         filtered_results.append(conversation)
 

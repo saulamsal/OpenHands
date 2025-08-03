@@ -1,5 +1,4 @@
 import React from "react";
-import { DiGit } from "react-icons/di";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -64,13 +63,8 @@ export function ConversationTabs() {
   const labels = React.useMemo(
     () => [
       {
-        label: "Changes",
-        to: "",
-        icon: <DiGit className="w-6 h-6" />,
-      },
-      {
         label: vscodeLabel,
-        to: "vscode",
+        to: "",
         icon: <VscCode className="w-5 h-5" />,
         rightContent: !RUNTIME_INACTIVE_STATES.includes(curAgentState) ? (
           <FaExternalLinkAlt
