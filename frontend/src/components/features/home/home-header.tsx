@@ -8,7 +8,6 @@ import { useAuth } from "#/context/auth-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { ProjectInput } from "#/components/shared/input/project-input";
 import { InteractionMode } from '#/components/shared/mode-selector';
-import { ModeSelectionModal } from '#/components/shared/modals/mode-selection-modal';
 import { Button } from '#/components/ui/button';
 import { AnimatedEyeballLogo } from "#/components/shared/animation/animated-eyeball-logo";
 import { SegmentedControl } from "#/components/shared/segmented-control";
@@ -53,7 +52,7 @@ export function HomeHeader() {
   const [activeTab, setActiveTab] = React.useState<string>("new-project");
   const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(null);
   const [showRepoModal, setShowRepoModal] = React.useState(false);
-  const [showModeModal, setShowModeModal] = React.useState(false);
+
   const [message, setMessage] = React.useState("");
   const [selectedFramework, setSelectedFramework] = React.useState('expo');
   const [mode, setMode] = React.useState<InteractionMode>('AGENTIC');
@@ -196,11 +195,20 @@ export function HomeHeader() {
         <div className="flex  flex-col w-auto relative gap-2">
 
 
+
+        <div className="flex items-center gap-2">
+            <SegmentedControl
+              options={tabOptions}
+              value={activeTab}
+              onValueChange={handleTabChange}
+              itemClassName="text-sm font-medium tracking-tight h-8 py-0 my-0"
+            />
+          </div>
+
+
+
           <div className="flex items-end gap-2 max-w-2xl">
-            <Button variant="outline" onClick={() => setShowModeModal(true)}>
-              {t(mode === 'AGENTIC' ? 'Agentic' : 'Chat')}
-            </Button>
-            {/* Project Input - Always visible */}
+            {/* Project Input with integrated dropdown */}
             <ProjectInput
               placeholder={activeTab === 'new-project' ? "What are we going to build today?" : selectedRepo ? `Selected: ${selectedRepo.full_name}` : "Click to select a repository..."}
               onSend={handleSendMessage}
@@ -212,18 +220,11 @@ export function HomeHeader() {
               onSuggestionClick={handleSuggestionClick}
               mode={mode}
               agenticQaTest={agenticQaTest}
+              onModeChange={handleModeChange}
+              onAgenticQaTestChange={handleAgenticQaTestChange}
             />
           </div>
 
-
-          <div className="flex items-center gap-2">
-            <SegmentedControl
-              options={tabOptions}
-              value={activeTab}
-              onValueChange={handleTabChange}
-              itemClassName="text-sm font-medium tracking-tight h-8 py-0 my-0"
-            />
-          </div>
 
 
 
@@ -261,14 +262,7 @@ export function HomeHeader() {
           )}
         </BaseModal>
 
-        <ModeSelectionModal
-          isOpen={showModeModal}
-          onOpenChange={setShowModeModal}
-          mode={mode}
-          agenticQaTest={agenticQaTest}
-          onModeChange={handleModeChange}
-          onAgenticQaTestChange={handleAgenticQaTestChange}
-        />
+
       </div>
 
       <div className="flex items-center justify-between">

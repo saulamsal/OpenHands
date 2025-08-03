@@ -41,7 +41,7 @@ interface DropdownMenuTriggerProps
 export const DropdownMenuTrigger = React.forwardRef<
   HTMLButtonElement,
   DropdownMenuTriggerProps
->(({ onClick, asChild, ...props }, ref) => {
+>(({ onClick, ...props }, ref) => {
   const { open, setOpen } = React.useContext(DropdownMenuContext);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {

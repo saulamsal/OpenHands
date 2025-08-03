@@ -5,6 +5,9 @@ import { cn } from "#/utils/utils";
 import { InteractionMode } from "../mode-selector";
 import { Spotlight } from "../../../../components/motion-primitives/spotlight";
 import { TextLoop } from "../../../../components/motion-primitives/text-loop";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
+import { Button } from '#/components/ui/button';
 
 interface ProjectInputProps {
   placeholder?: string;
@@ -17,6 +20,8 @@ interface ProjectInputProps {
   onSuggestionClick: (suggestion: string) => void;
   mode: InteractionMode;
   agenticQaTest: boolean;
+  onModeChange: (mode: InteractionMode) => void;
+  onAgenticQaTestChange: (enabled: boolean) => void;
 }
 
 export function ProjectInput({
@@ -30,6 +35,8 @@ export function ProjectInput({
   onSuggestionClick,
   mode,
   agenticQaTest,
+  onModeChange,
+  onAgenticQaTestChange,
 }: ProjectInputProps) {
   const { t } = useTranslation();
   const suggestions = [
@@ -47,6 +54,41 @@ export function ProjectInput({
 
   const handleClick = () => {
     textareaRef.current?.focus();
+  };
+
+  const renderModeDropdown = () => {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button variant="outline" className="flex items-center gap-2 h-8 rounded-full border-0">
+            {mode === 'AGENTIC' ? (
+              agenticQaTest ? 'Agentic MAX' : 'Agentic'
+            ) : 'Chat'}
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => {
+            onModeChange('AGENTIC');
+            onAgenticQaTestChange(false);
+          }}>
+            Agentic
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => {
+            onModeChange('AGENTIC');
+            onAgenticQaTestChange(true);
+          }}>
+            <div className="flex flex-col">
+              <span>Agentic MAX</span>
+              <span className="text-xs text-muted-foreground">Include QA & Testing</span>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onModeChange('CHAT')}>
+            Chat
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -108,14 +150,19 @@ export function ProjectInput({
   // );
 
 
+
+
   return (
     <div className={cn("w-full", className)}>
-      <form onSubmit={handleSubmit} className="relative">
-        <div className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[1px] dark:bg-zinc-700/30">
-          <Spotlight
-            className="from-primary via-primary/70 to-primary/0 blur-2xl dark:from-primary dark:via-primary/70 dark:to-primary/0"
-            size={160}
-          />
+
+      <form onSubmit={handleSubmit}>
+
+        <div className="relative rounded-xl bg-zinc-300/30 p-[1px] dark:bg-zinc-700/30">
+
+
+
+
+
           <div
             className="relative flex items-end bg-muted rounded-xl shadow-sm focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-primary focus-within:border-primary dark:focus-within:border-primary transition-colors cursor-text"
             onClick={handleClick}
@@ -163,38 +210,54 @@ export function ProjectInput({
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-end self-end z-10 p-1">
-              <button
-                type="button"
-                onClick={onAttach}
-                disabled={disabled || (mode === 'AGENTIC' && !agenticQaTest) || mode === 'CHAT'}
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700",
-                  (disabled || (mode === 'AGENTIC' && !agenticQaTest) || mode === 'CHAT') && "opacity-50 cursor-not-allowed",
-                )}
-                aria-label="Attach file"
-              >
-                <FiPaperclip size={16} />
-              </button>
 
+
+
+            {/* Action buttons on the right */}
+            <div className="flex flex-row items-end self-end z-10 p-1 relative w-full">
+
+              <div className="flex-1">
               <button
-                type="submit"
-                disabled={disabled || !value.trim()}
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 ml-2 text-white rounded-full transition-colors",
-                  value.trim() && !disabled
-                    ? "bg-primary hover:bg-primary/80 dark:bg-primary/80 dark:hover:bg-primary"
-                    : "bg-gray-300 dark:bg-gray-600 cursor-not-allowed",
-                )}
-                aria-label="Send message"
-              >
-                <FiArrowUp size={22} />
-              </button>
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onAttach?.() }}
+                  disabled={disabled || (mode === 'AGENTIC' && !agenticQaTest) || mode === 'CHAT'}
+                  className={cn(
+                    "flex items-center justify-center w-8 h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700",
+                    (disabled || (mode === 'AGENTIC' && !agenticQaTest) || mode === 'CHAT') && "opacity-50 cursor-not-allowed",
+                  )}
+                  aria-label="Attach file"
+                >
+                  <FiPaperclip size={16} />
+                </button>
+
+              </div>
+
+
+              <div className="flex flex-row mx-2 gap-2">
+              <div className="">
+              {renderModeDropdown()}
+              </div>
+                <button
+                  type="submit"
+                  disabled={disabled || !value.trim()}
+                  className={cn(
+                    "flex items-center justify-center w-8 h-8 ml-2 text-white rounded-full transition-colors",
+                    value.trim() && !disabled
+                      ? "bg-primary hover:bg-primary/80 dark:bg-primary/80 dark:hover:bg-primary"
+                      : "bg-gray-300 dark:bg-gray-600 cursor-not-allowed",
+                  )}
+                  aria-label="Send message"
+                >
+                  <FiArrowUp size={22} />
+                </button>
+              </div>
             </div>
 
           </div>
         </div>
+
+
+
       </form>
 
 
