@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
@@ -31,10 +32,9 @@ import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 import { ThemeProvider } from "#/context/theme-context";
-import { TeamSwitcher } from "#/components/features/teams/team-switcher";
+
 import { CreateTeamModal } from "#/components/features/teams/create-team-modal";
 import { Team } from "#/api/open-hands.types";
-import { useQueryClient } from "@tanstack/react-query";
 
 // Context to control sidebar toggle visibility
 export const SidebarToggleVisibilityContext = React.createContext(true);
@@ -316,9 +316,6 @@ background-image: radial-gradient(ellipse 120% 90% at 50% 60%, #ffffff00 55%, #f
         }}
       />
 
-
-
-
       {/* App Content */}
       <div className="relative z-10">
         <SidebarToggleVisibilityContext.Provider value={showSidebarToggle}>
@@ -335,18 +332,6 @@ background-image: radial-gradient(ellipse 120% 90% at 50% 60%, #ffffff00 55%, #f
                   id="root-outlet"
                   className="flex-1 w-full relative overflow-auto"
                 >
-
-{/* Team Switcher - always shown when authenticated */}
-                  {isDbAuthenticated && (
-                    <div className="p-4 border-b">
-                      <TeamSwitcher
-                        onCreateTeam={handleShowCreateTeam}
-                        variant="default"
-                        collapsed={false}
-                      />
-                    </div>
-                  )}
-
                   {config.data?.MAINTENANCE && (
                     <MaintenanceBanner
                       startTime={config.data.MAINTENANCE.startTime}

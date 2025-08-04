@@ -1,7 +1,14 @@
 import React from "react";
 import { useLocation, Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Settings, BookOpen, Bot, Plus, Menu } from "lucide-react";
+import {
+  MessageSquare,
+  Settings,
+  BookOpen,
+  Bot,
+  Plus,
+  Menu,
+} from "lucide-react";
 import { useAuth } from "#/context/auth-context";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -26,6 +33,9 @@ import {
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { Button } from "#/components/ui/button";
 import { SidebarToggleVisibilityContext } from "#/routes/root-layout";
+import { TeamSwitcher } from "#/components/features/teams/team-switcher";
+import { CreateTeamModal } from "#/components/features/teams/create-team-modal";
+import { Team } from "#/api/open-hands.types";
 
 export function AppSidebar() {
   const location = useLocation();
@@ -44,6 +54,7 @@ export function AppSidebar() {
   const { pathname } = location;
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
+  const [showCreateTeamModal, setShowCreateTeamModal] = React.useState(false);
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
   const shouldHideLlmSettings = config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS;
@@ -91,6 +102,19 @@ export function AppSidebar() {
   const handleShowSettings = React.useCallback(() => {
     setSettingsModalIsOpen(true);
   }, []);
+
+  const handleShowCreateTeam = React.useCallback(() => {
+    setShowCreateTeamModal(true);
+  }, []);
+
+  const handleCreateTeam = React.useCallback(
+    (team: Team) => {
+      // Invalidate teams query to refetch
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      setShowCreateTeamModal(false);
+    },
+    [queryClient],
+  );
 
   // Get sidebar toggle visibility from context
   const showSidebarToggle = React.useContext(SidebarToggleVisibilityContext);
@@ -216,6 +240,18 @@ export function AppSidebar() {
             )}
           </div>
 
+          {/* Team Switcher - only show when authenticated */}
+          {isAuthenticated && (
+            <div className="px-2 pb-2">
+              <TeamSwitcher
+                onCreateTeam={handleShowCreateTeam}
+                variant="compact"
+                collapsed={state === "collapsed"}
+                className="w-full"
+              />
+            </div>
+          )}
+
           {/* New Project Button */}
           <div className="">
             <Button
@@ -233,8 +269,6 @@ export function AppSidebar() {
               )}
             </Button>
           </div>
-
-
         </SidebarHeader>
 
         <SidebarContent>
@@ -324,7 +358,12 @@ export function AppSidebar() {
         />
       )}
 
-
+      {showCreateTeamModal && (
+        <CreateTeamModal
+          onClose={() => setShowCreateTeamModal(false)}
+          onSuccess={handleCreateTeam}
+        />
+      )}
     </>
   );
 }

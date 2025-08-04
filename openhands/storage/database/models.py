@@ -189,6 +189,8 @@ class ConversationDB(Base):
     status = Column(String(50), nullable=True)
     trigger = Column(String(50), nullable=True)
     pr_number = Column(JSON, nullable=True, default=list)
+    project_type = Column(String(50), nullable=True)
+    project_detection_confidence = Column(Integer, nullable=True)
     
     # Cost and usage metrics
     accumulated_cost = Column(Integer, default=0)  # Store as cents

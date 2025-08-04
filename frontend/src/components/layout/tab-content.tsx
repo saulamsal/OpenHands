@@ -7,6 +7,9 @@ const BrowserTab = lazy(() => import("#/routes/browser-tab"));
 const JupyterTab = lazy(() => import("#/routes/jupyter-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
+const ExpoAtlasTab = lazy(
+  () => import("#/components/features/conversation/expo-atlas-tab"),
+);
 
 interface TabContentProps {
   conversationPath: string;
@@ -23,6 +26,7 @@ export function TabContent({ conversationPath }: TabContentProps) {
   const isBrowserActive = currentPath === `${conversationPath}/browser`;
   const isJupyterActive = currentPath === `${conversationPath}/jupyter`;
   const isServedActive = currentPath === `${conversationPath}/served`;
+  const isExpoAtlasActive = currentPath === `${conversationPath}/expo-atlas`;
 
   return (
     <div className="h-full w-full relative">
@@ -53,6 +57,11 @@ export function TabContent({ conversationPath }: TabContentProps) {
           className={`absolute inset-0 ${isServedActive ? "block" : "hidden"}`}
         >
           <ServedTab />
+        </div>
+        <div
+          className={`absolute inset-0 ${isExpoAtlasActive ? "block" : "hidden"}`}
+        >
+          <ExpoAtlasTab />
         </div>
       </Suspense>
     </div>

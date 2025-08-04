@@ -70,10 +70,7 @@ export function Container({
   return (
     <div
       ref={containerRef}
-      className={clsx(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full w-full",
-        className,
-      )}
+      className={clsx("rounded-xl flex flex-col h-full w-full", className)}
     >
       {labels && (
         <div className="relative flex items-center h-[36px] w-full">
@@ -119,9 +116,7 @@ export function Container({
         </div>
       )}
       {!labels && label && (
-        <div className="px-2 h-[36px] border-b border-neutral-600 text-xs flex items-center">
-          {label}
-        </div>
+        <div className="px-2 h-[36px]  text-xs flex items-center">{label}</div>
       )}
       <div className="overflow-hidden flex-grow rounded-b-xl">{children}</div>
     </div>

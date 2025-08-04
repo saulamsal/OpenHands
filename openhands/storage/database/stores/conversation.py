@@ -67,6 +67,8 @@ class DatabaseConversationStore(ConversationStore):
                 completion_tokens=metadata.completion_tokens,
                 total_tokens=metadata.total_tokens,
                 llm_model=metadata.llm_model,
+                project_type=metadata.project_type,
+                project_detection_confidence=metadata.project_detection_confidence,
                 created_at=metadata.created_at or datetime.now(timezone.utc),
                 last_updated_at=metadata.last_updated_at or datetime.now(timezone.utc),
             )
@@ -85,6 +87,8 @@ class DatabaseConversationStore(ConversationStore):
             conversation.completion_tokens = metadata.completion_tokens
             conversation.total_tokens = metadata.total_tokens
             conversation.llm_model = metadata.llm_model
+            conversation.project_type = metadata.project_type
+            conversation.project_detection_confidence = metadata.project_detection_confidence
             conversation.last_updated_at = metadata.last_updated_at or datetime.now(timezone.utc)
         
         await self.db_session.commit()
@@ -191,6 +195,8 @@ class DatabaseConversationStore(ConversationStore):
             completion_tokens=conversation.completion_tokens,
             total_tokens=conversation.total_tokens,
             llm_model=conversation.llm_model,
+            project_type=conversation.project_type,
+            project_detection_confidence=conversation.project_detection_confidence,
             created_at=conversation.created_at,
             last_updated_at=conversation.last_updated_at,
         )

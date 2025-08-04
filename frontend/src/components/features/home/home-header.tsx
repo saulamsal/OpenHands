@@ -4,6 +4,8 @@ import React from "react";
 import { SiExpo, SiNextdotjs, SiSvelte, SiVuedotjs } from "react-icons/si";
 import { VscWand } from "react-icons/vsc";
 import { PiSparkleDuotone } from "react-icons/pi";
+import { FaGithub } from "react-icons/fa";
+import { FaGitlab } from "react-icons/fa6";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useAuth } from "#/context/auth-context";
@@ -20,12 +22,8 @@ import { GitRepository } from "#/types/git";
 import { ProjectRecommendations } from "./project-recommendations";
 import { RepoConnector } from "./repo-connector";
 import { TaskSuggestions } from "./tasks/task-suggestions";
-import { FaGithub } from "react-icons/fa";
-import { FaGitlab } from "react-icons/fa6";
 
-
-
-const iconClassName = "h-5 w-5";
+const iconClassName = "h-3 w-3";
 
 const frameworks = [
   {
@@ -202,7 +200,17 @@ export function HomeHeader() {
 
   const tabOptions = [
     { value: "create-new", label: "Create New" },
-    { value: "existing-repositories", label: <div className="inline-flex items-center gap-2"><span>Existing Repo</span><span className="inline-flex gap-2 bg-fore"><FaGithub color="black" /> <FaGitlab color="#E24A30" /></span></div> },
+    {
+      value: "existing-repositories",
+      label: (
+        <div className="inline-flex items-center gap-2">
+          <span>Existing Repo</span>
+          <span className="inline-flex gap-2 bg-fore">
+            <FaGithub color="black" /> <FaGitlab color="#E24A30" />
+          </span>
+        </div>
+      ),
+    },
     // { value: "explore", label: "Explore" },
   ];
 

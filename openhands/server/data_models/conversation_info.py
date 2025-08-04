@@ -29,3 +29,5 @@ class ConversationInfo:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     pr_number: list[int] = field(default_factory=list)
     team_id: str | None = None
+    project_type: str | None = None
+    project_detection_confidence: int | None = None

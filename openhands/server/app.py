@@ -28,6 +28,7 @@ from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
+from openhands.server.routes.project_detection import app as project_detection_router
 from openhands.server.shared import conversation_manager
 
 # Always import auth routes - database is the only mode
@@ -98,6 +99,7 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
+app.include_router(project_detection_router)
 app.include_router(api_keys_router)
 app.include_router(llm_configurations_router)
 app.include_router(billing_router)

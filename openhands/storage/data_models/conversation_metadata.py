@@ -33,3 +33,6 @@ class ConversationMetadata:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+    # Project detection
+    project_type: str | None = None
+    project_detection_confidence: int | None = None

@@ -466,6 +466,8 @@ async def _get_conversation_info(
             session_api_key=getattr(agent_loop_info, 'session_api_key', None),
             pr_number=conversation.pr_number,
             team_id=conversation.team_id,
+            project_type=conversation.project_type,
+            project_detection_confidence=conversation.project_detection_confidence,
         )
     except Exception as e:
         logger.error(
@@ -638,8 +640,14 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
 class UpdateConversationRequest(BaseModel):
     """Request model for updating conversation metadata."""
 
-    title: str = Field(
-        ..., min_length=1, max_length=200, description='New conversation title'
+    title: Optional[str] = Field(
+        None, min_length=1, max_length=200, description='New conversation title'
+    )
+    project_type: Optional[str] = Field(
+        None, max_length=50, description='Project type (e.g., EXPO, NEXTJS, LARAVEL)'
+    )
+    project_detection_confidence: Optional[int] = Field(
+        None, ge=0, le=100, description='Confidence level of project type detection'
     )
 
     model_config = ConfigDict(extra='forbid')
@@ -700,7 +708,12 @@ async def update_conversation(
 
         # Update the conversation metadata
         original_title = metadata.title
-        metadata.title = data.title.strip()
+        if data.title is not None:
+            metadata.title = data.title.strip()
+        if data.project_type is not None:
+            metadata.project_type = data.project_type
+        if data.project_detection_confidence is not None:
+            metadata.project_detection_confidence = data.project_detection_confidence
         metadata.last_updated_at = datetime.now(timezone.utc)
 
         # Save the updated metadata

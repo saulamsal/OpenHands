@@ -15,7 +15,8 @@ import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { MdOutlineAttachMoney } from "react-icons/md";
 import { ProgressiveBlur } from "#/../components/motion-primitives/progressive-blur";
-import { Dock, DockIcon, DockItem, DockLabel } from "#/../components/motion-primitives/dock";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,7 +128,7 @@ const categories: Category[] = [
 
 const sampleRecommendations: ProjectRecommendation[] = [
   {
-    id: "netflix-clone",
+    id: "netflix",
     title: "Netflix",
     description:
       "Create a streaming platform with video playback, user authentication, and content management",
@@ -135,7 +136,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
     categoryId: "entertainment",
   },
   {
-    id: "airbnb-clone",
+    id: "airbnb",
     title: "Airbnb",
     description:
       "Vacation rental marketplace with property listings, booking, and reviews",
@@ -152,8 +153,26 @@ const sampleRecommendations: ProjectRecommendation[] = [
     categoryId: "productivity",
   },
   {
-    id: "apple-tv-clone",
-    title: "Apple TV",
+    id: "luma",
+    title: "Luma",
+    description:
+      "Create and manage virtual events with live streaming, registration, and audience engagement",
+    image: "https://i.imgur.com/lHicqs4.jpeg",
+    categoryId: "utility",
+  },
+
+  {
+    id: "apple-sports",
+    title: " Sports",
+    description:
+      "Engage with live sports events, scores, and updates with personalized highlights and notifications",
+    image: "https://i.imgur.com/wesKnt2.png",
+    categoryId: "sports",
+  },
+
+  {
+    id: "apple-tv",
+    title: " TV",
     description:
       "Stream movies and TV shows with curated recommendations and personalized watchlists",
     image: "https://i.imgur.com/SPMiP5V_d.webp?maxwidth=760&fidelity=grand",
@@ -169,17 +188,16 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
 
   {
-    id: "apple-music-clone",
-    title: "Apple Music Clone",
+    id: "apple-music",
+    title: "Apple Music",
     description:
       "Develop a music streaming app with playlists, search, and audio player functionality",
-    image:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop",
+    image: "https://i.imgur.com/l7JhARc.png",
     categoryId: "entertainment",
   },
   {
-    id: "instagram-clone",
-    title: "Instagram Clone",
+    id: "instagram",
+    title: "Instagram",
     description:
       "Social media platform with photo sharing, stories, and real-time messaging",
     image:
@@ -188,7 +206,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "todo-app",
-    title: "Todo App Clone",
+    title: "Todo App",
     description:
       "Task management application with categories, due dates, and progress tracking",
     image:
@@ -197,7 +215,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "ecommerce-store",
-    title: "E-commerce Store Clone",
+    title: "E-commerce Store",
     description:
       "Online shopping platform with cart, payments, and inventory management",
     image:
@@ -206,7 +224,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "weather-app",
-    title: "Weather App Clone",
+    title: "Weather App",
     description:
       "Weather forecasting app with location services and interactive maps",
     image:
@@ -215,7 +233,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "trading-app",
-    title: "Trading App Clone",
+    title: "Trading App",
     description:
       "Financial trading platform with real-time charts, portfolio tracking, and market analysis",
     image:
@@ -224,7 +242,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "banking-app",
-    title: "Banking App Clone",
+    title: "Banking App",
     description:
       "Digital banking solution with account management, transfers, and financial insights",
     image:
@@ -233,7 +251,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "sports-tracker",
-    title: "Sports Tracker Clone",
+    title: "Sports Tracker",
     description:
       "Fitness and sports tracking app with workout plans, progress monitoring, and social features",
     image:
@@ -242,7 +260,7 @@ const sampleRecommendations: ProjectRecommendation[] = [
   },
   {
     id: "fantasy-sports",
-    title: "Fantasy Sports Clone",
+    title: "Fantasy Sports",
     description:
       "Fantasy sports platform with team management, live scoring, and league competitions",
     image:
@@ -269,12 +287,12 @@ export function ProjectRecommendations({
           (rec) => rec.categoryId === selectedCategoryId,
         );
   return (
-    <div className="space-y-8 max-w-7xl mx-auto px-4">
-      <h2 className="text-4xl font-light tracking-tight">
+    <div className="space-y-2 max-w-7xl mx-auto px-4 mt-20 ">
+      <h2 className="text-4xl font-light tracking-tight text-center">
         Don't know where to start?
       </h2>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center">
         <div className="flex  gap-4 items-center">
           <div>
             <p className="text-muted-foreground text-lg">
@@ -295,24 +313,24 @@ export function ProjectRecommendations({
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-4">
+      {/* Category Filter - Carousel Menu */}
+      <div className="relative flex items-center justify-center py-4 mt-4">
+        <div className="flex items-center gap-4 border-r-1 border-foreground pr-2 mr-2">
           {frameworks.length > 0 && currentFramework && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 text-base font-medium tracking-tight px-4 py-2 border rounded-full hover:bg-gray-50">
-                  <span className="text-foreground ">
-                    {currentFramework.icon}
-                  </span>
-                  <span className="text-muted-foreground text-base tracking-tight">
-                    {currentFramework.label}
-                  </span>
-                  <LuChevronsUpDown
-                    className="h-5 w-5 opacity-5 text-muted-foreground text-xl"
-                    width={20}
-                    height={20}
-                    style={{ color: "#C9B97433" }}
-                  />
+                <button className="flex items-center gap-2 text-base font-medium tracking-tight px-3 py-2 border rounded-full hover:bg-gray-50 justify-between min-w-fit whitespace-nowrap">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-foreground flex-shrink-0">
+                      {currentFramework.icon}
+                    </span>
+                    <span className="text-muted-foreground text-sm tracking-tight whitespace-nowrap">
+                      {currentFramework.label}
+                    </span>
+                  </div>
+                  <LuChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -335,79 +353,114 @@ export function ProjectRecommendations({
             </DropdownMenu>
           )}
         </div>
-      </div>
 
-      {/* Category Filter - Dock Style */}
-      <div className="relative h-32 flex items-center justify-center ">
-        <div className="absolute bottom-2 left-1/2 max-w-full -translate-x-1/2">
-          <Dock className="items-end pb-3 ">
+        <div className="w-full max-w-4xl mb-4 relative group">
+          {/* Left Arrow */}
+          <button
+            onClick={() => {
+              const container = document.getElementById('category-scroll');
+              if (container) {
+                container.scrollBy({ left: -200, behavior: 'smooth' });
+              }
+            }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hidden md:flex"
+          >
+            <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+          </button>
+
+          {/* Right Arrow */}
+          <button
+            onClick={() => {
+              const container = document.getElementById('category-scroll');
+              if (container) {
+                container.scrollBy({ left: 200, behavior: 'smooth' });
+              }
+            }}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hidden md:flex"
+          >
+            <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+          </button>
+
+          {/* Scrollable Categories */}
+          <div
+            id="category-scroll"
+            className="flex items-center gap-1 overflow-x-auto scrollbar-hide scroll-smooth px-8 md:px-10"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
             {categories.map((category) => {
               const IconComponent = category.icon;
               const isSelected = selectedCategoryId === category.id;
 
               return (
-                <DockItem
+                <div
                   key={category.id}
                   onClick={() => setSelectedCategoryId(category.id)}
                   className={cn(
-                    "aspect-square rounded-xl transition-all duration-200",
-                    isSelected
-                      ? "bg-primary border-2 border-primary"
-                      : "bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700"
+                    "flex items-center gap-2 px-4 py-2 cursor-pointer transition-all duration-200 relative whitespace-nowrap flex-shrink-0",
+                    "hover:bg-gray-50 dark:hover:bg-neutral-800/50",
+                    isSelected && "border-b-2 border-primary ",
                   )}
                 >
-                  <DockLabel>
-                    {category.name} ({category.count})
-                  </DockLabel>
-                  <DockIcon>
-                    <IconComponent
-                      className={cn(
-                        "h-full w-full transition-colors",
-                        isSelected
-                          ? "text-white"
-                          : "text-neutral-600 dark:text-neutral-300"
-                      )}
-                    />
-                  </DockIcon>
-                </DockItem>
+                  <IconComponent
+                    className={cn(
+                      "h-4 w-4 transition-colors text-muted-foreground",
+                    )}
+                  />
+
+                  <span className="flex items-center gap-1">
+                    <span
+                      className={cn("text-sm font-medium text-foreground")}
+                    >
+                      {category.name}
+                    </span>
+                    <span className="text-xs w-5 h-5 font-bold rounded-full bg-muted text-muted-foreground flex items-center justify-center ">
+                      {category.count}
+                    </span>
+                  </span>
+                </div>
               );
             })}
-          </Dock>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredRecommendations.map((recommendation) => (
-          <div
-            key={recommendation.id}
-            className="relative aspect-[2.5/4] overflow-hidden rounded-3xl cursor-pointer"
-            onClick={() => {
-              const cloneMessage = `clone ${recommendation.title.toLowerCase()}`;
-              onCloneProject?.(cloneMessage);
-            }}
-          >
-            {/* Background Image */}
-            <img
-              src={recommendation.image}
-              alt={recommendation.title}
-              className="absolute inset-0 w-full h-full object-cover object-top"
-            />
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {filteredRecommendations.map((recommendation) => (
+            <div
+              key={recommendation.id}
+              className="relative aspect-[6/10] overflow-hidden rounded-2xl cursor-pointer hover:grayscale transition-transform duration-200"
+              onClick={() => {
+                const cloneMessage = `clone ${recommendation.title.toLowerCase()}`;
+                onCloneProject?.(cloneMessage);
+              }}
+            >
+              {/* Background Image */}
+              <img
+                src={recommendation.image}
+                alt={recommendation.title}
+                className="absolute inset-0 w-full h-full object-cover object-top"
+              />
 
-            {/* Progressive Blur Overlay */}
-            <ProgressiveBlur
-              className="pointer-events-none absolute bottom-0 left-0 h-[35%] w-full rounded-3xl"
-              blurIntensity={6}
-              direction="bottom"
-            />
+              {/* Progressive Blur Overlay */}
+              <ProgressiveBlur
+                className="pointer-events-none absolute bottom-0 left-0 h-[35%] w-full rounded-2xl"
+                blurIntensity={5}
+                direction="bottom"
+              />
 
-            {/* Content */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-              <h3 className="text-xl font-bold text-white leading-tight">
-                {recommendation.title}
-              </h3>
+              {/* Content */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+                <h3 className="text-base font-bold text-white leading-tight">
+                  {recommendation.title}
+                </h3>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <div className="text-center pt-6">

@@ -2,6 +2,7 @@ import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
 import { setMetrics } from "#/state/metrics-slice";
+import { setRuntimeStatus } from "#/state/agent-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -57,6 +58,11 @@ export function handleStatusMessage(message: StatusMessage) {
         ...message,
       }),
     );
+
+    // Check if this is a runtime status message
+    if (message.id && message.id.startsWith("STATUS$")) {
+      store.dispatch(setRuntimeStatus(message.id));
+    }
   } else if (message.type === "error") {
     trackError({
       message: message.message,

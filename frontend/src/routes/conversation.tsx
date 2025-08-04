@@ -28,6 +28,7 @@ import { ConversationTabs } from "#/components/features/conversation/conversatio
 import { requireAuth } from "#/utils/auth.client";
 import { Route } from "./+types/conversation";
 import { SegmentedControl } from "#/components/shared/segmented-control";
+import { useProjectDetection } from "#/hooks/use-project-detection";
 
 const Terminal = React.lazy(
   () => import("#/components/features/terminal/terminal"),
@@ -50,6 +51,7 @@ function AppContent() {
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
   const location = useLocation();
+  const { detectProjectType, isDetecting } = useProjectDetection();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -81,6 +83,34 @@ function AppContent() {
     providers,
     navigate,
   ]);
+
+  // Detect project type when runtime is ready
+  React.useEffect(() => {
+    console.log("Project detection check:", {
+      hasConversation: !!conversation,
+      runtimeStatus: conversation?.runtime_status,
+      isDetecting,
+      projectType: conversation?.project_type,
+      confidence: conversation?.project_detection_confidence,
+    });
+
+    if (
+      conversation &&
+      conversation.runtime_status === "RUNNING" &&
+      !isDetecting &&
+      (!conversation.project_type ||
+        conversation.project_type === "UNKNOWN" ||
+        (conversation.project_detection_confidence || 0) < 50)
+    ) {
+      console.log("Triggering project detection...");
+      // Run file-based detection when runtime is ready
+      const timer = setTimeout(() => {
+        detectProjectType();
+      }, 2000); // Small delay to ensure file system is ready
+
+      return () => clearTimeout(timer);
+    }
+  }, [conversation, isDetecting, detectProjectType]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());
@@ -143,7 +173,7 @@ function AppContent() {
           <div className="h-full w-full min-h-[494px]">
             <ConversationTabs />
           </div>
-          <div className="h-64 w-full rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary">
+          <div className="h-64 w-full rounded-xl overflow-hidden ">
             <React.Suspense fallback={<div className="h-full" />}>
               <Terminal />
             </React.Suspense>
@@ -197,7 +227,9 @@ function AppContent() {
           >
             <PanelGroup direction="vertical" className="h-full">
               <Panel defaultSize={75} minSize={30} className="overflow-hidden">
-                <ConversationTabs />
+                <div className=" h-full bg-base-secondary">
+                  <ConversationTabs />
+                </div>
               </Panel>
               <PanelResizeHandle className="h-3" />
               <Panel
@@ -205,7 +237,7 @@ function AppContent() {
                 minSize={10}
                 className="h-full overflow-hidden"
               >
-                <div className="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary h-full">
+                <div className=" h-full bg-base-secondary">
                   <React.Suspense fallback={<div className="h-full" />}>
                     <Terminal />
                   </React.Suspense>

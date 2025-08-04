@@ -41,14 +41,14 @@ export function SegmentedControl({
       >
         {options.map((option, index) => {
           // Handle both string, JSX, and function labels
-          const labelContent = typeof option.label === 'function' 
-            ? option.label() 
-            : option.label;
-          
+          const labelContent =
+            typeof option.label === "function" ? option.label() : option.label;
+
           // Create aria-label from label content
-          const ariaLabel = typeof labelContent === 'string' 
-            ? `${labelContent} view`
-            : `${option.value} view`;
+          const ariaLabel =
+            typeof labelContent === "string"
+              ? `${labelContent} view`
+              : `${option.value} view`;
 
           return (
             <button

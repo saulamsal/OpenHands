@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
+import { LuChevronsUpDown } from "react-icons/lu";
 import { Team } from "#/api/open-hands.types";
 import { Button } from "#/components/shared/buttons/button";
 import { useAuth } from "#/context/auth-context";
 import { cn } from "#/utils/cn";
 import {
-  ChevronDown,
   Plus,
   Check,
   Users,
@@ -59,7 +59,9 @@ export function TeamSwitcher({
         <Button
           variant="ghost"
           className={cn(
-            collapsed ? "justify-center p-2 h-10 w-10" : "justify-between gap-2",
+            collapsed
+              ? "justify-center p-2 h-10 w-10"
+              : "justify-between gap-2",
             !collapsed && (variant === "compact" ? "h-8 px-2" : "h-10 px-3"),
             className,
           )}
@@ -68,7 +70,7 @@ export function TeamSwitcher({
             // Collapsed state - only show icon
             <div
               className={cn(
-                "shrink-0 rounded flex items-center justify-center h-6 w-6",
+                "shrink-0 rounded-full flex items-center justify-center h-6 w-6",
                 activeTeam.is_personal
                   ? "bg-primary/10 text-primary"
                   : "bg-muted text-muted-foreground",
@@ -86,7 +88,7 @@ export function TeamSwitcher({
               <div className="flex items-center gap-2 min-w-0">
                 <div
                   className={cn(
-                    "shrink-0 rounded flex items-center justify-center",
+                    "shrink-0 rounded-full flex items-center justify-center",
                     variant === "compact" ? "h-5 w-5" : "h-6 w-6",
                     activeTeam.is_personal
                       ? "bg-primary/10 text-primary"
@@ -109,7 +111,7 @@ export function TeamSwitcher({
                   {activeTeam.name}
                 </span>
               </div>
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <LuChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             </>
           )}
         </Button>

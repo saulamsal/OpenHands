@@ -290,6 +290,47 @@ class OpenHands {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
 
+  static async updateConversation(
+    conversationId: string,
+    updates: Partial<Conversation>,
+  ): Promise<Conversation> {
+    const { data } = await openHands.patch<Conversation>(
+      `/api/conversations/${conversationId}`,
+      updates,
+    );
+    return data;
+  }
+
+  static async detectProjectType(conversationId: string): Promise<{
+    project_type: string;
+    confidence: number;
+    detected_features: string[];
+  }> {
+    const { data } = await openHands.post(
+      `/api/project-detection/detect/${conversationId}`,
+    );
+    return data;
+  }
+
+  static async detectBatchProjectTypes(
+    limit: number = 10,
+    onlyMissing: boolean = true,
+  ): Promise<{
+    processed: number;
+    detected: number;
+    failed: number;
+    results: Record<string, string>;
+  }> {
+    const { data } = await openHands.post(
+      "/api/project-detection/detect-batch",
+      {
+        limit,
+        only_missing: onlyMissing,
+      },
+    );
+    return data;
+  }
+
   static async createConversation(
     selectedRepository?: string,
     git_provider?: Provider,
@@ -571,18 +612,6 @@ class OpenHands {
     );
 
     return data.prompt;
-  }
-
-  static async updateConversation(
-    conversationId: string,
-    updates: { title: string },
-  ): Promise<boolean> {
-    const { data } = await openHands.patch<boolean>(
-      `/api/conversations/${conversationId}`,
-      updates,
-    );
-
-    return data;
   }
 
   // New auth methods

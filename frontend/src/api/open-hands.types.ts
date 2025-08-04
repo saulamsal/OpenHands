@@ -1,6 +1,7 @@
 import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
 import { Provider } from "#/types/settings";
+import { ProjectType } from "#/types/project-type";
 
 export interface ErrorResponse {
   error: string;
@@ -157,6 +158,8 @@ export interface Conversation {
   session_api_key: string | null;
   pr_number?: number[] | null;
   team_id?: string;
+  project_type?: ProjectType;
+  project_detection_confidence?: number;
 }
 
 export interface ResultSet<T> {
