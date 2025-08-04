@@ -1,11 +1,9 @@
 import React from "react";
 import { PrefetchPageLinks } from "react-router";
 import { HomeHeader } from "#/components/features/home/home-header";
-import { RepoConnector } from "#/components/features/home/repo-connector";
-import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
-import { useUserProviders } from "#/hooks/use-user-providers";
-import { GitRepository } from "#/types/git";
 import { Route } from "./+types/home";
+import { SidebarTrigger } from "#/components/ui/sidebar";
+import { useIsMobile } from "#/hooks/use-mobile";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
@@ -15,27 +13,21 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) =>
   null;
 
 function HomeScreen() {
-  const { providers } = useUserProviders();
-  const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(
-    null,
-  );
-
-  const providersAreSet = providers.length > 0;
+  const isMobile = useIsMobile();
 
   return (
     <div
       data-testid="home-screen"
       className=" h-full flex flex-col rounded-xl px-[42px] pt-[42px] gap-8 overflow-y-auto"
     >
+      {/* Mobile hamburger menu */}
+      {isMobile && (
+        <div className="flex items-center justify-start mb-4 -mt-2">
+          <SidebarTrigger className="" />
+        </div>
+      )}
+
       <HomeHeader />
-
-      <hr className="border" />
-
-      <main className="flex flex-col lg:flex-row justify-between gap-8">
-        <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
-        <hr className="md:hidden border" />
-        {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
-      </main>
     </div>
   );
 }

@@ -14,11 +14,7 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { AppSidebar } from "#/components/features/sidebar/app-sidebar";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "#/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "#/components/ui/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { EnhancedAuthModal } from "#/components/features/auth/enhanced-auth-modal";
 import { useAuth } from "#/context/auth-context";
@@ -35,6 +31,13 @@ import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 import { ThemeProvider } from "#/context/theme-context";
+import { TeamSwitcher } from "#/components/features/teams/team-switcher";
+import { CreateTeamModal } from "#/components/features/teams/create-team-modal";
+import { Team } from "#/api/open-hands.types";
+import { useQueryClient } from "@tanstack/react-query";
+
+// Context to control sidebar toggle visibility
+export const SidebarToggleVisibilityContext = React.createContext(true);
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -80,6 +83,8 @@ function MainApp() {
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
   const { isAuthenticated: isDbAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  const [showCreateTeamModal, setShowCreateTeamModal] = React.useState(false);
 
   const config = useConfig();
   const {
@@ -97,6 +102,19 @@ function MainApp() {
   const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
+
+  const handleCreateTeam = React.useCallback(
+    (team: Team) => {
+      // Invalidate teams query to refetch
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      setShowCreateTeamModal(false);
+    },
+    [queryClient],
+  );
+
+  const handleShowCreateTeam = React.useCallback(() => {
+    setShowCreateTeamModal(true);
+  }, []);
 
   // Auto-login if login method is stored in local storage
   useAutoLogin();
@@ -224,34 +242,127 @@ function MainApp() {
   // Don't show EnhancedAuthModal anymore - routes handle auth
   const renderEnhancedAuthModal = false;
 
-  return (
-    <SidebarProvider>
-      <div
-        data-testid="root-layout"
-        className=" h-screen lg:min-w-[1024px] flex flex-col md:flex-row"
-      >
-        <AppSidebar />
+  // Use the pathname to determine layout behavior
+  const currentPathname = pathname;
+  // Match specific routes that might need different sidebar behavior
+  const isSpecialRoute = /^\/(conversations|projects)\/[\w-]+$/.test(
+    currentPathname || "",
+  );
 
-        <SidebarInset>
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-          </header>
-          <div
-            id="root-outlet"
-            className="flex-1 w-full relative overflow-auto p-3"
+  // Custom responsive sidebar logic
+  const [sidebarOpen, setSidebarOpen] = React.useState<boolean | undefined>(
+    undefined,
+  );
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const showSidebarToggle = true; // Always show toggle for flexibility
+
+  // Determine responsive sidebar state
+  React.useEffect(() => {
+    const updateSidebarState = () => {
+      const width = window.innerWidth;
+      const isDesktop = width >= 1024; // lg breakpoint
+      const isTablet = width >= 768 && width < 1024; // md to lg
+      const isMobile = width < 768; // below md
+
+      let shouldOpen = false;
+
+      if (isSpecialRoute) {
+        // Always collapsed on special routes (detail pages)
+        shouldOpen = false;
+      } else if (isDesktop) {
+        // Desktop: expanded by default
+        shouldOpen = true;
+      } else if (isTablet || isMobile) {
+        // Tablet and mobile: collapsed by default
+        shouldOpen = false;
+      }
+
+      setSidebarOpen(shouldOpen);
+      setIsInitialized(true);
+    };
+
+    // Set initial state
+    updateSidebarState();
+
+    // Listen for resize events
+    const handleResize = () => updateSidebarState();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isSpecialRoute]);
+
+  // Don't render until we've determined the initial state
+  if (!isInitialized) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-white relative">
+      {/* Dynamic Gradient Background */}
+
+      {/* background-image: radial-gradient(ellipse 120% 90% at 50% 55%, #ffffff00 55%, #ff5900 100%);
+
+background-image: radial-gradient(ellipse 120% 90% at 50% 60%, #ffffff00 55%, #ff5900 100%); */}
+
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse 120% 90% at 50% 55%, #ffffff00 55%, #ff5900 100%)
+          `,
+          backgroundSize: "100% 100%",
+        }}
+      />
+
+
+
+
+      {/* App Content */}
+      <div className="relative z-10">
+        <SidebarToggleVisibilityContext.Provider value={showSidebarToggle}>
+          <SidebarProvider
+            key={`${currentPathname}-${sidebarOpen}`}
+            open={sidebarOpen}
+            onOpenChange={setSidebarOpen}
+            className=""
           >
-            {config.data?.MAINTENANCE && (
-              <MaintenanceBanner
-                startTime={config.data.MAINTENANCE.startTime}
-              />
-            )}
-            <EmailVerificationGuard>
-              <Outlet />
-            </EmailVerificationGuard>
-          </div>
-        </SidebarInset>
+            <AppSidebar />
+            <SidebarInset>
+              <div className="flex flex-1 flex-col gap-4">
+                <div
+                  id="root-outlet"
+                  className="flex-1 w-full relative overflow-auto"
+                >
+
+{/* Team Switcher - always shown when authenticated */}
+                  {isDbAuthenticated && (
+                    <div className="p-4 border-b">
+                      <TeamSwitcher
+                        onCreateTeam={handleShowCreateTeam}
+                        variant="default"
+                        collapsed={false}
+                      />
+                    </div>
+                  )}
+
+                  {config.data?.MAINTENANCE && (
+                    <MaintenanceBanner
+                      startTime={config.data.MAINTENANCE.startTime}
+                    />
+                  )}
+                  <EmailVerificationGuard>
+                    <Outlet />
+                  </EmailVerificationGuard>
+                </div>
+              </div>
+            </SidebarInset>
+          </SidebarProvider>
+        </SidebarToggleVisibilityContext.Provider>
       </div>
 
+      {/* Modals */}
       {renderAuthModal && (
         <AuthModal
           githubAuthUrl={effectiveGitHubAuthUrl}
@@ -270,7 +381,14 @@ function MainApp() {
       {config.data?.FEATURE_FLAGS.ENABLE_BILLING && settings?.IS_NEW_USER && (
         <SetupPaymentModal />
       )}
-    </SidebarProvider>
+
+      {showCreateTeamModal && (
+        <CreateTeamModal
+          onClose={() => setShowCreateTeamModal(false)}
+          onSuccess={handleCreateTeam}
+        />
+      )}
+    </div>
   );
 }
 

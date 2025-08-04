@@ -130,9 +130,8 @@ class OpenHands {
     eventId?: number,
     reason?: string,
   ): Promise<{ status: string; message: string }> {
-    const url = `/feedback/conversation`;
+    const url = `/api/conversations/${conversationId}/feedback`;
     const payload = {
-      conversation_id: conversationId,
       event_id: eventId,
       rating,
       reason,
@@ -156,7 +155,7 @@ class OpenHands {
     eventId: number,
   ): Promise<{ exists: boolean; rating?: number; reason?: string }> {
     try {
-      const url = `/feedback/conversation/${conversationId}/${eventId}`;
+      const url = `/api/conversations/${conversationId}/feedback/${eventId}`;
       const { data } = await openHands.get<{
         exists: boolean;
         rating?: number;

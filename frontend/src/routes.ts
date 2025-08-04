@@ -37,6 +37,7 @@ export default [
     route("teams", "routes/teams.tsx"),
     route("teams/:teamId", "routes/team-details.tsx"),
     route("profile", "routes/user-profile.tsx"),
+    route("debug-tailwind", "routes/debug-tailwind.tsx"),
     route("*", "routes/not-found.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -152,52 +152,66 @@ function AppContent() {
       );
     }
     return (
-      <div className="h-full w-full">
-        <PanelGroup direction="vertical">
-          <Panel defaultSize={75} minSize={30}>
-            <PanelGroup direction="horizontal" className="h-full">
-              <Panel defaultSize={50} minSize={20} className="h-full">
-                <div className="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary flex flex-col h-full">
-                  <div className="shrink-0">
-                    <Controls
-                      setSecurityOpen={onSecurityModalOpen}
-                      showSecurityLock={!!settings?.SECURITY_ANALYZER}
-                    />
-                    <div className="px-4 py-2">
-                      <SegmentedControl
-                        options={[
-                          { value: "chat", label: "Chat" },
-                          { value: "changes", label: "Changes" },
-                        ]}
-                        value={activeTab}
-                        onValueChange={setActiveTab}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-grow overflow-hidden">
-                    {activeTab === "chat" ? (
-                      <ChatInterface />
-                    ) : (
-                      <React.Suspense fallback={<div className="h-full" />}>
-                        <EditorTab />
-                      </React.Suspense>
-                    )}
-                  </div>
+      <div className="h-full w-full mx-4 py-2">
+        <PanelGroup direction="horizontal" className="h-full">
+          <Panel
+            defaultSize={50}
+            minSize={20}
+            className="h-full overflow-hidden"
+          >
+            <div className="rounded-2xl overflow-hidden bg-foreground/20 backdrop-blur-xl flex flex-col h-full">
+              <div className="shrink-0">
+                <Controls
+                  setSecurityOpen={onSecurityModalOpen}
+                  showSecurityLock={!!settings?.SECURITY_ANALYZER}
+                />
+                <div className="px-4 py-2">
+                  <SegmentedControl
+                    options={[
+                      { value: "chat", label: "Chat" },
+                      { value: "changes", label: "Changes" },
+                    ]}
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                  />
                 </div>
-              </Panel>
-              <PanelResizeHandle className="w-3" />
-              <Panel defaultSize={50} minSize={20} className="h-full">
+              </div>
+              <div className="flex-grow overflow-hidden h-0">
+                {activeTab === "chat" ? (
+                  <div className="h-full">
+                    <ChatInterface />
+                  </div>
+                ) : (
+                  <React.Suspense fallback={<div className="h-full" />}>
+                    <EditorTab />
+                  </React.Suspense>
+                )}
+              </div>
+            </div>
+          </Panel>
+          <PanelResizeHandle className="w-3" />
+          <Panel
+            defaultSize={50}
+            minSize={20}
+            className="h-full overflow-hidden"
+          >
+            <PanelGroup direction="vertical" className="h-full">
+              <Panel defaultSize={75} minSize={30} className="overflow-hidden">
                 <ConversationTabs />
               </Panel>
+              <PanelResizeHandle className="h-3" />
+              <Panel
+                defaultSize={25}
+                minSize={10}
+                className="h-full overflow-hidden"
+              >
+                <div className="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary h-full">
+                  <React.Suspense fallback={<div className="h-full" />}>
+                    <Terminal />
+                  </React.Suspense>
+                </div>
+              </Panel>
             </PanelGroup>
-          </Panel>
-          <PanelResizeHandle className="h-3" />
-          <Panel defaultSize={25} minSize={10} className="h-full">
-            <div className="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary h-full">
-              <React.Suspense fallback={<div className="h-full" />}>
-                <Terminal />
-              </React.Suspense>
-            </div>
           </Panel>
         </PanelGroup>
       </div>
@@ -218,9 +232,7 @@ function AppContent() {
       <ConversationSubscriptionsProvider>
         <EventHandler initialData={initialData}>
           <div data-testid="app-route" className="flex flex-col h-full w-full">
-            <div className="flex h-full overflow-auto w-full">
-              {renderMain()}
-            </div>
+            <div className="flex h-full w-full">{renderMain()}</div>
 
             {settings && (
               <Security

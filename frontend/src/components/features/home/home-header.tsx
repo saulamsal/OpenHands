@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import React from "react";
 import { SiExpo, SiNextdotjs, SiSvelte, SiVuedotjs } from "react-icons/si";
 import { VscWand } from "react-icons/vsc";
-import { ChevronDown } from "lucide-react";
+import { PiSparkleDuotone } from "react-icons/pi";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useAuth } from "#/context/auth-context";
@@ -17,13 +17,13 @@ import { ConnectToProviderMessage } from "./connect-to-provider-message";
 import { BaseModal } from "#/components/shared/modals/base-modal/base-modal";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
-import { QuickSuggestions } from "./quick-suggestions";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
+import { ProjectRecommendations } from "./project-recommendations";
+import { RepoConnector } from "./repo-connector";
+import { TaskSuggestions } from "./tasks/task-suggestions";
+import { FaGithub } from "react-icons/fa";
+import { FaGitlab } from "react-icons/fa6";
+
+
 
 const iconClassName = "h-5 w-5";
 
@@ -35,8 +35,8 @@ const frameworks = [
     description: "Automatically detect framework",
   },
   {
-    key: "expo",
-    label: "Expo",
+    key: "expo-router",
+    label: "Expo Router",
     icon: <SiExpo className={iconClassName} />,
     description: "React Native with Expo",
   },
@@ -76,16 +76,18 @@ export function HomeHeader() {
   const { data: config } = useConfig();
   const { providers } = useUserProviders();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const projectInputRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Tab state
-  const [activeTab, setActiveTab] = React.useState<string>("new-project");
+  const [activeTab, setActiveTab] = React.useState<string>("create-new");
   const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(
     null,
   );
   const [showRepoModal, setShowRepoModal] = React.useState(false);
 
   const [message, setMessage] = React.useState("");
-  const [selectedFramework, setSelectedFramework] = React.useState("expo");
+  const [selectedFramework, setSelectedFramework] =
+    React.useState("expo-router");
   const [mode, setMode] = React.useState<InteractionMode>("AGENTIC");
   const [agenticQaTest, setAgenticQaTest] = React.useState(true);
   const [attachments, setAttachments] = React.useState<File[]>([]);
@@ -199,45 +201,13 @@ export function HomeHeader() {
   };
 
   const tabOptions = [
-    {
-      value: "new-project",
-      label: (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 text-sm font-medium tracking-tight">
-              {currentFramework.icon}
-              <span>{currentFramework.label}</span>
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {frameworks.map((framework) => (
-              <DropdownMenuItem
-                key={framework.key}
-                onClick={() => handleFrameworkChange(framework.key)}
-                disabled={framework.disabled}
-                className={
-                  framework.disabled ? "opacity-60 cursor-not-allowed" : ""
-                }
-              >
-                {framework.icon}
-                <span className="ml-2">{framework.label}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-    { value: "existing-repository", label: "Existing Repo" },
+    { value: "create-new", label: "Create New" },
+    { value: "existing-repositories", label: <div className="inline-flex items-center gap-2"><span>Existing Repo</span><span className="inline-flex gap-2 bg-fore"><FaGithub color="black" /> <FaGitlab color="#E24A30" /></span></div> },
+    // { value: "explore", label: "Explore" },
   ];
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    if (value === "existing-repository") {
-      setShowRepoModal(true);
-    } else {
-      setShowRepoModal(false);
-    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -250,6 +220,19 @@ export function HomeHeader() {
 
   const handleAgenticQaTestChange = (enabled: boolean) => {
     setAgenticQaTest(enabled);
+  };
+
+  const handleCloneProject = (cloneMessage: string) => {
+    // Smooth scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Set the clone message
+    setMessage(cloneMessage);
+
+    // Focus the input after a brief delay for smooth scrolling to complete
+    setTimeout(() => {
+      projectInputRef.current?.focus();
+    }, 300);
   };
 
   return (
@@ -267,15 +250,23 @@ export function HomeHeader() {
       <div className="flex flex-col items-center justify-between gap-5">
         <AnimatedEyeballLogo width={80} height={80} />
 
-        <h1 className="text-6xl font-bold tracking-tighter">
-          {t("HOME$LETS_START_BUILDING")}
+        <h1 className="text-6xl font-bold tracking-tighter relative">
+          {t("HOME$LETS_START_BUILDING")}{" "}
+          <span
+            className="text-7xl text-primary font-bold -top-1 relative "
+            style={{ fontFamily: "'Dancing Script Variable', cursive" }}
+          >
+            {t("magical")} {` `}
+            <PiSparkleDuotone className="absolute -top-4 -right-6 text-3xl text-primary" />
+          </span>
+          <span className="">{t("products.")}</span>
         </h1>
       </div>
 
-      <div className="flex-auto flex-col gap-6 relative">
+      <div className="flex-auto flex-col gap-6 relative mx-auto max-w-4xl">
         {/* Segmented Control for Tab Selection */}
-        <div className="flex  flex-col w-auto relative gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col w-full relative gap-6">
+          <div className="flex items-center justify-center gap-2">
             <SegmentedControl
               options={tabOptions}
               value={activeTab}
@@ -284,77 +275,152 @@ export function HomeHeader() {
             />
           </div>
 
-          <div className="flex items-end gap-2 max-w-2xl">
-            {/* Project Input with integrated dropdown */}
-            <ProjectInput
-              placeholder={
-                activeTab === "new-project"
-                  ? "What are we going to build today?"
-                  : selectedRepo
-                    ? `Selected: ${selectedRepo.full_name}`
-                    : "Click to select a repository..."
-              }
-              onSend={handleSendMessage}
-              onAttach={handleAttach}
-              disabled={
-                isCreatingConversation ||
-                (activeTab === "existing-repository" && !selectedRepo)
-              }
-              className="w-full"
-              value={message}
-              onChange={setMessage}
-              onSuggestionClick={handleSuggestionClick}
-              mode={mode}
-              agenticQaTest={agenticQaTest}
-              onModeChange={handleModeChange}
-              onAgenticQaTestChange={handleAgenticQaTestChange}
-              attachments={attachments}
-              onRemoveAttachment={(index) => {
-                setAttachments((prev) => prev.filter((_, i) => i !== index));
-              }}
-              onFilesSelected={(files) => {
-                setAttachments((prev) => [...prev, ...files]);
-              }}
-            />
-          </div>
-        </div>
+          {/* Tab Content */}
+          {activeTab === "create-new" && (
+            <div className="space-y-6">
+              <div className="flex flex-col items-center gap-4 max-w-3xl mx-auto">
+                {/* Project Input */}
+                <div className="w-full max-w-2xl">
+                  <ProjectInput
+                    ref={projectInputRef}
+                    placeholder="What are we going to build today?"
+                    onSend={handleSendMessage}
+                    onAttach={handleAttach}
+                    disabled={isCreatingConversation}
+                    className="w-full"
+                    value={message}
+                    onChange={setMessage}
+                    onSuggestionClick={handleSuggestionClick}
+                    mode={mode}
+                    agenticQaTest={agenticQaTest}
+                    onModeChange={handleModeChange}
+                    onAgenticQaTestChange={handleAgenticQaTestChange}
+                    attachments={attachments}
+                    onRemoveAttachment={(index) => {
+                      setAttachments((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      );
+                    }}
+                    onFilesSelected={(files) => {
+                      setAttachments((prev) => [...prev, ...files]);
+                    }}
+                  />
+                </div>
+              </div>
 
-        <QuickSuggestions
-          onSuggestionClick={handleSuggestionClick}
-          disabled={isCreatingConversation}
-        />
+              {/* <QuickSuggestions
+                onSuggestionClick={handleSuggestionClick}
+                disabled={isCreatingConversation}
+              /> */}
 
-        {/* Repository Selection Modal */}
-        <BaseModal
-          isOpen={showRepoModal}
-          onOpenChange={(isOpen) => {
-            setShowRepoModal(isOpen);
-            if (!isOpen) {
-              setActiveTab("new-project");
-            }
-          }}
-          title="Select Repository"
-          subtitle={
-            !providersAreSet
-              ? "Connect to a Git provider to access repositories"
-              : "Choose a repository to work with"
-          }
-          contentClassName="max-w-[40rem] p-6"
-          testID="repository-selection-modal"
-        >
-          {!providersAreSet ? (
-            <ConnectToProviderMessage />
-          ) : (
-            <RepositorySelectionForm
-              onRepoSelection={(repo) => {
-                setSelectedRepo(repo);
-                if (repo) {
-                  setShowRepoModal(false);
-                }
-              }}
-            />
+              {/* Project Recommendations */}
+              <ProjectRecommendations
+                selectedFramework={selectedFramework}
+                frameworks={frameworks}
+                onFrameworkChange={handleFrameworkChange}
+                onCreateProject={(recommendation) => {
+                  console.log("Creating project:", recommendation);
+                  // TODO: Implement project creation logic
+                }}
+                onCloneProject={handleCloneProject}
+              />
+            </div>
           )}
-        </BaseModal>
+
+          {activeTab === "existing-repositories" && (
+            <div className="space-y-6">
+              <div className="flex flex-col items-center gap-4 max-w-3xl mx-auto">
+                {/* Project Input */}
+                <div className="w-full max-w-2xl">
+                  <ProjectInput
+                    placeholder={
+                      selectedRepo
+                        ? `Selected: ${selectedRepo.full_name}`
+                        : "Click to select a repository..."
+                    }
+                    onSend={handleSendMessage}
+                    onAttach={handleAttach}
+                    disabled={isCreatingConversation || !selectedRepo}
+                    className="w-full"
+                    value={message}
+                    onChange={setMessage}
+                    onSuggestionClick={handleSuggestionClick}
+                    mode={mode}
+                    agenticQaTest={agenticQaTest}
+                    onModeChange={handleModeChange}
+                    onAgenticQaTestChange={handleAgenticQaTestChange}
+                    attachments={attachments}
+                    onRemoveAttachment={(index) => {
+                      setAttachments((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      );
+                    }}
+                    onFilesSelected={(files) => {
+                      setAttachments((prev) => [...prev, ...files]);
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* <QuickSuggestions
+                onSuggestionClick={handleSuggestionClick}
+                disabled={isCreatingConversation}
+              /> */}
+
+              {/* Repository Connector */}
+              <RepoConnector
+                onRepoSelection={(repo) => setSelectedRepo(repo)}
+              />
+
+              {/* Task Suggestions */}
+              {providersAreSet && selectedRepo && (
+                <TaskSuggestions filterFor={selectedRepo} />
+              )}
+
+              {/* Repository Selection Modal */}
+              <BaseModal
+                isOpen={showRepoModal}
+                onOpenChange={(isOpen) => {
+                  setShowRepoModal(isOpen);
+                }}
+                title="Select Repository"
+                subtitle={
+                  !providersAreSet
+                    ? "Connect to a Git provider to access repositories"
+                    : "Choose a repository to work with"
+                }
+                contentClassName="max-w-[40rem] p-6"
+                testID="repository-selection-modal"
+              >
+                {!providersAreSet ? (
+                  <ConnectToProviderMessage />
+                ) : (
+                  <RepositorySelectionForm
+                    onRepoSelection={(repo) => {
+                      setSelectedRepo(repo);
+                      if (repo) {
+                        setShowRepoModal(false);
+                      }
+                    }}
+                  />
+                )}
+              </BaseModal>
+            </div>
+          )}
+
+          {activeTab === "explore" && (
+            <div className="space-y-6">
+              <div className="text-center py-12">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Coming Soon
+                </h3>
+                <p className="text-gray-600">
+                  Explore community projects and templates
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

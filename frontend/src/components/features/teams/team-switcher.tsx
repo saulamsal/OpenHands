@@ -24,13 +24,15 @@ import {
 interface TeamSwitcherProps {
   onCreateTeam?: () => void;
   className?: string;
-  variant?: "default" | "compact";
+  variant?: "default" | "compact" | "collapsed";
+  collapsed?: boolean;
 }
 
 export function TeamSwitcher({
   onCreateTeam,
   className,
   variant = "default",
+  collapsed = false,
 }: TeamSwitcherProps) {
   const { teams, activeTeam, setActiveTeam, user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -57,38 +59,59 @@ export function TeamSwitcher({
         <Button
           variant="ghost"
           className={cn(
-            "justify-between gap-2",
-            variant === "compact" ? "h-8 px-2" : "h-10 px-3",
+            collapsed ? "justify-center p-2 h-10 w-10" : "justify-between gap-2",
+            !collapsed && (variant === "compact" ? "h-8 px-2" : "h-10 px-3"),
             className,
           )}
         >
-          <div className="flex items-center gap-2 min-w-0">
+          {collapsed ? (
+            // Collapsed state - only show icon
             <div
               className={cn(
-                "shrink-0 rounded flex items-center justify-center",
-                variant === "compact" ? "h-5 w-5" : "h-6 w-6",
+                "shrink-0 rounded flex items-center justify-center h-6 w-6",
                 activeTeam.is_personal
                   ? "bg-primary/10 text-primary"
                   : "bg-muted text-muted-foreground",
               )}
             >
               {activeTeam.is_personal ? (
-                <User
-                  className={variant === "compact" ? "h-3 w-3" : "h-4 w-4"}
-                />
+                <User className="h-4 w-4" />
               ) : (
-                <Users
-                  className={variant === "compact" ? "h-3 w-3" : "h-4 w-4"}
-                />
+                <Users className="h-4 w-4" />
               )}
             </div>
-            <span
-              className={cn("truncate", variant === "compact" && "text-sm")}
-            >
-              {activeTeam.name}
-            </span>
-          </div>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          ) : (
+            // Expanded state - show full content
+            <>
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className={cn(
+                    "shrink-0 rounded flex items-center justify-center",
+                    variant === "compact" ? "h-5 w-5" : "h-6 w-6",
+                    activeTeam.is_personal
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {activeTeam.is_personal ? (
+                    <User
+                      className={variant === "compact" ? "h-3 w-3" : "h-4 w-4"}
+                    />
+                  ) : (
+                    <Users
+                      className={variant === "compact" ? "h-3 w-3" : "h-4 w-4"}
+                    />
+                  )}
+                </div>
+                <span
+                  className={cn("truncate", variant === "compact" && "text-sm")}
+                >
+                  {activeTeam.name}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">

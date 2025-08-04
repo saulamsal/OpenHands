@@ -2,7 +2,7 @@ import { AnimatedBackground } from "#/../components/motion-primitives/animated-b
 
 interface SegmentedControlOption {
   value: string;
-  label: React.ReactNode;
+  label: React.ReactNode | (() => React.ReactNode);
 }
 
 interface SegmentedControlProps {
@@ -39,18 +39,30 @@ export function SegmentedControl({
           duration: 0.2,
         }}
       >
-        {options.map((option, index) => (
-          <button
-            key={index}
-            data-id={option.value}
-            type="button"
-            aria-label={`${option.label} view`}
-            className={`inline-flex min-w-[120px] items-center justify-center px-4 py-1
-              text-center text-foreground transition-transform active:scale-[0.98] ${itemClassName}`}
-          >
-            {option.label}
-          </button>
-        ))}
+        {options.map((option, index) => {
+          // Handle both string, JSX, and function labels
+          const labelContent = typeof option.label === 'function' 
+            ? option.label() 
+            : option.label;
+          
+          // Create aria-label from label content
+          const ariaLabel = typeof labelContent === 'string' 
+            ? `${labelContent} view`
+            : `${option.value} view`;
+
+          return (
+            <button
+              key={index}
+              data-id={option.value}
+              type="button"
+              aria-label={ariaLabel}
+              className={`inline-flex min-w-[120px] items-center justify-center px-4 py-1
+                text-center text-foreground transition-transform active:scale-[0.98] ${itemClassName}`}
+            >
+              {labelContent}
+            </button>
+          );
+        })}
       </AnimatedBackground>
     </div>
   );

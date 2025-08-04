@@ -1,8 +1,9 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { v4 as uuidv4 } from "uuid";
 import { I18nKey } from "#/i18n/declaration";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
@@ -33,6 +34,8 @@ import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { InitialDataContext } from "#/wrapper/event-handler";
+import { addToQueue, removeFromQueue } from "#/state/message-queue-slice";
+import { QueuedMessageComponent } from "./queued-message";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -50,6 +53,7 @@ export function ChatInterface() {
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessage();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const {
     scrollDomToBottom,
@@ -64,6 +68,9 @@ export function ChatInterface() {
   const [initialMessageSent, setInitialMessageSent] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const messageQueue = useSelector(
+    (state: RootState) => state.messageQueue.queue,
+  );
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -178,6 +185,68 @@ export function ChatInterface() {
     t,
   ]);
 
+  // Process queued messages when WebSocket connects
+  React.useEffect(() => {
+    if (webSocketStatus === "CONNECTED" && messageQueue.length > 0) {
+      const processQueue = async () => {
+        for (const queuedMsg of messageQueue) {
+          // Get files from temporary storage if any
+          const files = (window as any).__queuedFiles?.[queuedMsg.id] || [];
+
+          let uploadedFiles: string[] = [];
+          if (files.length > 0) {
+            try {
+              const result = await uploadFiles({
+                conversationId: params.conversationId!,
+                files,
+              });
+              uploadedFiles = result.uploaded_files;
+              result.skipped_files.forEach((f) => displayErrorToast(f.reason));
+            } catch (error) {
+              // Error already handled with toast notification
+              displayErrorToast(t(I18nKey.CHAT_INTERFACE$FILE_UPLOAD_FAILED));
+            }
+          }
+
+          const filePrompt =
+            uploadedFiles.length > 0
+              ? `${t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE")}: ${uploadedFiles.join("\n\n")}`
+              : "";
+          const prompt = filePrompt
+            ? `${queuedMsg.content}\n\n${filePrompt}`
+            : queuedMsg.content;
+
+          send(
+            createChatMessage(
+              prompt,
+              queuedMsg.imageUrls,
+              uploadedFiles,
+              queuedMsg.timestamp,
+            ),
+          );
+
+          // Remove from queue
+          dispatch(removeFromQueue(queuedMsg.id));
+
+          // Clean up temporary file storage
+          if ((window as any).__queuedFiles?.[queuedMsg.id]) {
+            delete (window as any).__queuedFiles[queuedMsg.id];
+          }
+        }
+      };
+
+      processQueue();
+    }
+  }, [
+    webSocketStatus,
+    messageQueue,
+    send,
+    dispatch,
+    uploadFiles,
+    params.conversationId,
+    t,
+  ]);
+
   // Check if there are any substantive agent actions (not just system messages)
   const hasSubstantiveAgentActions = React.useMemo(
     () =>
@@ -227,6 +296,27 @@ export function ChatInterface() {
     const imageUrls = await Promise.all(promises);
 
     const timestamp = new Date().toISOString();
+
+    // If WebSocket is not connected, queue the message
+    if (webSocketStatus !== "CONNECTED") {
+      const queuedMessage = {
+        id: uuidv4(),
+        content,
+        imageUrls,
+        fileUrls: [], // We'll upload files when actually sending
+        timestamp,
+      };
+      dispatch(addToQueue(queuedMessage));
+
+      // Store the original files in a temporary map for later upload
+      if (files.length > 0) {
+        (window as any).__queuedFiles = (window as any).__queuedFiles || {};
+        (window as any).__queuedFiles[queuedMessage.id] = files;
+      }
+
+      setMessageToSend(null);
+      return;
+    }
 
     const { skipped_files: skippedFiles, uploaded_files: uploadedFiles } =
       files.length > 0
@@ -279,6 +369,17 @@ export function ChatInterface() {
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
+
+  // Show connection status message
+  const connectionStatusMessage = React.useMemo(() => {
+    if (webSocketStatus === "CONNECTING") {
+      return "Connecting to runtime...";
+    }
+    if (webSocketStatus === "DISCONNECTED" && messageQueue.length > 0) {
+      return "Runtime disconnected. Messages will be sent when reconnected.";
+    }
+    return null;
+  }, [webSocketStatus, messageQueue.length]);
 
   // Define all callbacks before conditional rendering to follow Rules of Hooks
   const handleSuggestionClick = React.useCallback(
@@ -339,12 +440,21 @@ export function ChatInterface() {
           )}
 
           {!isLoadingMessages && (
-            <Messages
-              messages={events}
-              isAwaitingUserConfirmation={
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-              }
-            />
+            <>
+              <Messages
+                messages={events}
+                isAwaitingUserConfirmation={
+                  curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+                }
+              />
+              {/* Display queued messages after regular messages */}
+              {messageQueue.map((queuedMsg) => (
+                <QueuedMessageComponent
+                  key={queuedMsg.id}
+                  message={queuedMsg}
+                />
+              ))}
+            </>
           )}
 
           {isWaitingForUserInput &&
@@ -371,11 +481,20 @@ export function ChatInterface() {
 
           {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
+          {connectionStatusMessage && (
+            <div className="text-sm text-muted-foreground text-center py-2 flex items-center justify-center gap-2">
+              {webSocketStatus === "CONNECTING" && (
+                <LoadingSpinner size="small" />
+              )}
+              {connectionStatusMessage}
+            </div>
+          )}
+
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
             isDisabled={
-              curAgentState === AgentState.LOADING ||
+              // Only disable if agent is awaiting confirmation, not when loading/connecting
               curAgentState === AgentState.AWAITING_USER_CONFIRMATION
             }
             mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}

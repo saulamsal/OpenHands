@@ -1,24 +1,20 @@
 import React from "react";
 import { useLocation, Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Settings, BookOpen, Bot, Plus } from "lucide-react";
+import { MessageSquare, Settings, BookOpen, Bot, Plus, Menu } from "lucide-react";
 import { useAuth } from "#/context/auth-context";
 import { UserActions } from "./user-actions";
-import { TeamSwitcher } from "../teams/team-switcher";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useGitUser } from "#/hooks/query/use-git-user";
-import { CreateTeamModal } from "../teams/create-team-modal";
-import { Team } from "#/api/open-hands.types";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -29,6 +25,7 @@ import {
 } from "#/components/ui/sidebar";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { Button } from "#/components/ui/button";
+import { SidebarToggleVisibilityContext } from "#/routes/root-layout";
 
 export function AppSidebar() {
   const location = useLocation();
@@ -43,16 +40,24 @@ export function AppSidebar() {
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutate: logout } = useLogout();
-  const { state } = useSidebar();
+  const { state, setOpenMobile, toggleSidebar } = useSidebar();
+  const { pathname } = location;
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
-  const [showCreateTeamModal, setShowCreateTeamModal] = React.useState(false);
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
   const shouldHideLlmSettings = config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS;
 
   const shouldHideMicroagentManagement =
     config?.FEATURE_FLAGS.HIDE_MICROAGENT_MANAGEMENT;
+
+  // Auto-collapse sidebar on specific detail pages
+  React.useEffect(() => {
+    const isDetailPage = /^\/(conversations|projects)\/[\w-]+$/.test(pathname);
+    if (isDetailPage && state === "expanded") {
+      setOpenMobile(false);
+    }
+  }, [pathname, state, setOpenMobile]);
 
   React.useEffect(() => {
     if (shouldHideLlmSettings) return;
@@ -83,25 +88,12 @@ export function AppSidebar() {
     authLogout();
   }, [logout, authLogout]);
 
-  const handleCreateTeam = React.useCallback(
-    (team: Team) => {
-      // Invalidate teams query to refetch
-      queryClient.invalidateQueries({ queryKey: ["teams"] });
-      setShowCreateTeamModal(false);
-    },
-    [queryClient],
-  );
-
-  const handleShowCreateTeam = React.useCallback(() => {
-    setShowCreateTeamModal(true);
-  }, []);
-
   const handleShowSettings = React.useCallback(() => {
     setSettingsModalIsOpen(true);
   }, []);
 
-  // Add some debugging
-  console.log("Current pathname:", location.pathname);
+  // Get sidebar toggle visibility from context
+  const showSidebarToggle = React.useContext(SidebarToggleVisibilityContext);
 
   const isConversationsActive = React.useMemo(
     () =>
@@ -133,6 +125,7 @@ export function AppSidebar() {
         isButton: false,
         disabled: settings?.EMAIL_VERIFIED === false,
         className: "text-primary hover:bg-primary/90",
+        onClick: () => {}, // Add empty onClick handler
       },
       {
         title: "Conversations",
@@ -200,109 +193,128 @@ export function AppSidebar() {
     <>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center gap-2 px-2">
-            <SidebarTrigger />
-            {state === "expanded" && (
-              <div className="flex items-center justify-center">
-                <AllHandsLogoButton />
+          <div className="flex items-center px-2">
+            {showSidebarToggle && state === "expanded" && <SidebarTrigger />}
+            {showSidebarToggle && (
+              <div className="flex items-center">
+                {state === "collapsed" ? (
+                  // When collapsed, show menu icon that expands sidebar
+                  <button
+                    onClick={toggleSidebar}
+                    className="p-2 hover:bg-accent rounded-md transition-colors"
+                    title="Expand sidebar"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                ) : (
+                  // When expanded, show logo that goes to home
+                  <Link to="/">
+                    <AllHandsLogoButton />
+                  </Link>
+                )}
               </div>
             )}
           </div>
 
-          {/* Team Switcher - always shown when authenticated */}
-          {isAuthenticated && state === "expanded" && (
-            <div className="px-2">
-              <TeamSwitcher
-                onCreateTeam={handleShowCreateTeam}
-                variant="default"
-              />
-            </div>
-          )}
+          {/* New Project Button */}
+          <div className="">
+            <Button
+              onClick={() => {}}
+              className={`w-full gap-2 ${state === "collapsed" ? "justify-center" : "justify-start"}`}
+              variant="link"
+            >
+              <div className="bg-primary rounded-full p-2 w-6 h-6 flex items-center justify-center">
+                <Plus className="size-4 text-white" />
+              </div>
+              {state !== "collapsed" && (
+                <span className="text-sm font-bold text-primary">
+                  New Project
+                </span>
+              )}
+            </Button>
+          </div>
+
+
         </SidebarHeader>
 
         <SidebarContent>
+          {/* Main Navigation */}
           <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild={!item.isButton}
-                      isActive={item.isActive}
-                      disabled={item.disabled}
-                      tooltip={state === "collapsed" ? item.title : undefined}
-                      className={item.className}
-                    >
-                      {item.isButton ? (
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start gap-2 p-2 h-8"
-                          disabled={item.disabled}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Button>
-                      ) : item.url ? (
-                        <Link to={item.url}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      ) : (
-                        <button onClick={item.onClick}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </button>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild={!item.isButton}
+                    isActive={item.isActive}
+                    disabled={item.disabled}
+                    tooltip={state === "collapsed" ? item.title : undefined}
+                    className={item.className}
+                  >
+                    {item.isButton ? (
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start gap-2 p-2 h-8"
+                        disabled={item.disabled}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Button>
+                    ) : item.url ? (
+                      <Link to={item.url} className="cursor-pointer">
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    ) : (
+                      <button onClick={item.onClick}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </button>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
 
         <SidebarFooter>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {footerItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild={!!item.url}
-                      disabled={item.disabled}
-                      tooltip={state === "collapsed" ? item.title : undefined}
-                    >
-                      {item.url ? (
-                        <a href={item.url}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </a>
-                      ) : (
-                        <button onClick={item.onClick}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </button>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+          <SidebarMenu>
+            {footerItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild={!!item.url}
+                  disabled={item.disabled}
+                  tooltip={state === "collapsed" ? item.title : undefined}
+                >
+                  {item.url ? (
+                    <a href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </a>
+                  ) : (
+                    <button onClick={item.onClick}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </button>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
 
-                {/* User Actions */}
-                <SidebarMenuItem>
-                  <div className="px-2 py-1">
-                    <UserActions
-                      user={userForActions}
-                      onLogout={handleLogout}
-                      isLoading={gitUser.isFetching}
-                    />
-                  </div>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+            {/* User Actions */}
+            <SidebarMenuItem>
+              <div className="px-2 py-1">
+                <UserActions
+                  user={userForActions}
+                  onLogout={handleLogout}
+                  isLoading={gitUser.isFetching}
+                />
+              </div>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
 
-        <SidebarRail />
+        {showSidebarToggle && <SidebarRail />}
       </Sidebar>
 
       {settingsModalIsOpen && (
@@ -312,12 +324,7 @@ export function AppSidebar() {
         />
       )}
 
-      {showCreateTeamModal && (
-        <CreateTeamModal
-          onClose={() => setShowCreateTeamModal(false)}
-          onSuccess={handleCreateTeam}
-        />
-      )}
+
     </>
   );
 }
