@@ -477,10 +477,12 @@ class AgentSession:
         custom_secrets_descriptions: dict[str, str],
         working_dir: str,
     ) -> Memory:
+        # Auto-load Expo microagents for Qlur AI platform
         memory = Memory(
             event_stream=self.event_stream,
             sid=self.sid,
             status_callback=self._status_callback,
+            force_load_framework='expo',
         )
 
         if self.runtime:

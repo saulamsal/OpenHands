@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Dict, List, Optional, Set
 
 import openhands
 from openhands.core.config.mcp_config import MCPConfig
@@ -37,6 +37,31 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
 
 USER_MICROAGENTS_DIR = Path.home() / '.openhands' / 'microagents'
 
+# Framework-specific microagent sets for auto-loading
+FRAMEWORK_MICROAGENT_SETS = {
+    'expo': [
+        'expo',
+        'expo_routing', 
+        'expo_styling',
+        'expo_components',
+        'expo_boilerplate',
+        'expo_state',
+        'expo_deployment'
+    ],
+    'nextjs': [
+        'nextjs',
+        'nextjs_routing',
+        'nextjs_styling',
+        'nextjs_components'
+    ],
+    'laravel': [
+        'laravel',
+        'laravel_routing',
+        'laravel_eloquent',
+        'laravel_blade'
+    ]
+}
+
 
 class Memory:
     """
@@ -50,12 +75,18 @@ class Memory:
     loop: asyncio.AbstractEventLoop | None
     repo_microagents: dict[str, RepoMicroagent]
     knowledge_microagents: dict[str, KnowledgeMicroagent]
+    
+    # Framework-specific auto-loading
+    detected_framework: Optional[str]
+    auto_loaded_microagents: Set[str]
+    force_load_framework: Optional[str]  # For Expo-only mode
 
     def __init__(
         self,
         event_stream: EventStream,
         sid: str,
         status_callback: Callable | None = None,
+        force_load_framework: Optional[str] = None,
     ):
         self.event_stream = event_stream
         self.sid = sid if sid else str(uuid.uuid4())
@@ -71,6 +102,11 @@ class Memory:
         # Additional placeholders to store user workspace microagents
         self.repo_microagents = {}
         self.knowledge_microagents = {}
+        
+        # Framework-specific auto-loading
+        self.detected_framework = None
+        self.auto_loaded_microagents = set()
+        self.force_load_framework = force_load_framework
 
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
@@ -83,6 +119,10 @@ class Memory:
 
         # Load user microagents from ~/.openhands/microagents/
         self._load_user_microagents()
+        
+        # Auto-load framework microagents if specified
+        if self.force_load_framework:
+            self.load_framework_microagents(self.force_load_framework)
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -161,8 +201,8 @@ class Memory:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
 
-        # Find any matched microagents based on the query
-        microagent_knowledge = self._find_microagent_knowledge(event.query)
+        # Find any matched microagents based on the query (includes auto-loaded)
+        microagent_knowledge = self._enhanced_find_microagent_knowledge(event.query)
 
         # Create observation if we have anything
         if (
@@ -209,8 +249,8 @@ class Memory:
     ) -> RecallObservation | None:
         """When a microagent action triggers microagents, create a RecallObservation with structured data."""
 
-        # Find any matched microagents based on the query
-        microagent_knowledge = self._find_microagent_knowledge(event.query)
+        # Find any matched microagents based on the query (includes auto-loaded)
+        microagent_knowledge = self._enhanced_find_microagent_knowledge(event.query)
 
         # Create observation if we have anything
         if microagent_knowledge:
@@ -250,6 +290,97 @@ class Memory:
                     )
                 )
         return recalled_content
+    
+    def load_framework_microagents(self, framework: str) -> None:
+        """Auto-load framework-specific microagents without requiring triggers.
+        
+        Args:
+            framework: Framework name (e.g., 'expo', 'nextjs', 'laravel')
+        """
+        framework_lower = framework.lower()
+        if framework_lower not in FRAMEWORK_MICROAGENT_SETS:
+            logger.warning(f"Unknown framework for auto-loading: {framework}")
+            return
+            
+        microagent_names = FRAMEWORK_MICROAGENT_SETS[framework_lower]
+        loaded_count = 0
+        
+        for agent_name in microagent_names:
+            if agent_name in self.knowledge_microagents and agent_name not in self.auto_loaded_microagents:
+                # Mark as auto-loaded to track and avoid duplicates
+                self.auto_loaded_microagents.add(agent_name)
+                loaded_count += 1
+                logger.info(f"Auto-loaded framework microagent: {agent_name} for {framework}")
+            elif agent_name not in self.knowledge_microagents:
+                logger.debug(f"Framework microagent not found: {agent_name} for {framework}")
+                
+        self.detected_framework = framework_lower
+        logger.info(f"Auto-loaded {loaded_count} microagents for framework: {framework}")
+    
+    def get_auto_loaded_microagents(self, include_repo: bool = True) -> List[MicroagentKnowledge]:
+        """Get all auto-loaded framework microagents as MicroagentKnowledge objects.
+        
+        Args:
+            include_repo: Whether to include always-active repo microagents
+            
+        Returns:
+            List of MicroagentKnowledge objects for auto-loaded microagents
+        """
+        auto_loaded_content: List[MicroagentKnowledge] = []
+        
+        # Add auto-loaded knowledge microagents
+        for agent_name in self.auto_loaded_microagents:
+            if agent_name in self.knowledge_microagents:
+                microagent = self.knowledge_microagents[agent_name]
+                auto_loaded_content.append(
+                    MicroagentKnowledge(
+                        name=microagent.name,
+                        trigger="auto-loaded",  # Special trigger for auto-loaded
+                        content=microagent.content,
+                    )
+                )
+        
+        # Add repo microagents (always active) if requested
+        if include_repo:
+            for agent_name, microagent in self.repo_microagents.items():
+                auto_loaded_content.append(
+                    MicroagentKnowledge(
+                        name=microagent.name,
+                        trigger="always-active",  # Special trigger for repo microagents
+                        content=microagent.content,
+                    )
+                )
+                
+        return auto_loaded_content
+    
+    def _enhanced_find_microagent_knowledge(self, query: str) -> List[MicroagentKnowledge]:
+        """Enhanced microagent knowledge finder that combines trigger-based and auto-loaded microagents.
+        
+        Args:
+            query: The query to search for microagent triggers
+            
+        Returns:
+            A list of MicroagentKnowledge objects for both triggered and auto-loaded microagents
+        """
+        # Get trigger-based microagents (existing functionality)
+        triggered_content = self._find_microagent_knowledge(query)
+        
+        # Get auto-loaded framework microagents
+        auto_loaded_content = self.get_auto_loaded_microagents(include_repo=False)  # Repo handled separately
+        
+        # Combine and deduplicate by name
+        all_content = {}
+        
+        # Add triggered content (higher priority)
+        for content in triggered_content:
+            all_content[content.name] = content
+            
+        # Add auto-loaded content (only if not already triggered)
+        for content in auto_loaded_content:
+            if content.name not in all_content:
+                all_content[content.name] = content
+                
+        return list(all_content.values())
 
     def load_user_workspace_microagents(
         self, user_microagents: list[BaseMicroagent]

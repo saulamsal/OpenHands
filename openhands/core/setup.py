@@ -142,6 +142,7 @@ def create_memory(
     status_callback: Callable | None = None,
     conversation_instructions: str | None = None,
     working_dir: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
+    force_load_framework: str | None = None,
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -153,11 +154,13 @@ def create_memory(
         repo_directory: The repository directory, if any.
         status_callback: Optional callback function to handle status updates.
         conversation_instructions: Optional instructions that are passed to the agent
+        force_load_framework: Framework to auto-load microagents for (e.g. 'expo')
     """
     memory = Memory(
         event_stream=event_stream,
         sid=sid,
         status_callback=status_callback,
+        force_load_framework=force_load_framework,
     )
 
     memory.set_conversation_instructions(conversation_instructions)
