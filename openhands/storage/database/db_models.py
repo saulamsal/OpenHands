@@ -7,7 +7,11 @@ following a pattern similar to Laravel Jetstream.
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
+
+# Import subscription models
+if TYPE_CHECKING:
+    from .models.subscription_models import Subscription, TokenBalance
 
 from sqlalchemy import (
     Boolean,
@@ -21,6 +25,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     text,
+    BigInteger,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -65,12 +70,19 @@ class User(Base):
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     
+    # Subscription-related columns
+    stripe_customer_id = Column(String(255), unique=True, nullable=True)
+    default_payment_method_id = Column(String(255), nullable=True)
+    total_tokens_used = Column(BigInteger, default=0)
+    
     # Relationships
     owned_teams = relationship('Team', back_populates='owner', cascade='all, delete-orphan')
     team_memberships = relationship('TeamMember', back_populates='user', cascade='all, delete-orphan')
     conversations = relationship('ConversationDB', back_populates='user')
     api_keys = relationship('APIKey', back_populates='user', cascade='all, delete-orphan')
     settings = relationship('UserSettings', back_populates='user', uselist=False, cascade='all, delete-orphan')
+    subscription = relationship('Subscription', back_populates='user', uselist=False)
+    token_balance = relationship('TokenBalance', back_populates='user', uselist=False)
     
     @property
     def teams(self) -> List['Team']:
@@ -99,6 +111,12 @@ class Team(Base):
     # Team settings
     is_personal = Column(Boolean, default=False, nullable=False)
     
+    # Subscription-related columns
+    stripe_customer_id = Column(String(255), unique=True, nullable=True)
+    billing_email = Column(String(255), nullable=True)
+    token_allocation_strategy = Column(String(50), default='unlimited')
+    active_member_count = Column(Integer, default=0)
+    
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
@@ -107,6 +125,8 @@ class Team(Base):
     owner = relationship('User', back_populates='owned_teams')
     members = relationship('TeamMember', back_populates='team', cascade='all, delete-orphan')
     conversations = relationship('ConversationDB', back_populates='team')
+    subscription = relationship('Subscription', back_populates='team', uselist=False)
+    token_balance = relationship('TokenBalance', back_populates='team', uselist=False)
     
     def add_member(self, user: User, role: TeamRole = TeamRole.DEVELOPER) -> 'TeamMember':
         """Add a user to the team with the specified role."""

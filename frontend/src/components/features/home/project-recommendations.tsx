@@ -14,8 +14,8 @@ import {
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { MdOutlineAttachMoney } from "react-icons/md";
-import { ProgressiveBlur } from "#/../components/motion-primitives/progressive-blur";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ProgressiveBlur } from "#/../components/motion-primitives/progressive-blur";
 
 import {
   DropdownMenu,
@@ -358,9 +358,9 @@ export function ProjectRecommendations({
           {/* Left Arrow */}
           <button
             onClick={() => {
-              const container = document.getElementById('category-scroll');
+              const container = document.getElementById("category-scroll");
               if (container) {
-                container.scrollBy({ left: -200, behavior: 'smooth' });
+                container.scrollBy({ left: -200, behavior: "smooth" });
               }
             }}
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hidden md:flex"
@@ -371,9 +371,9 @@ export function ProjectRecommendations({
           {/* Right Arrow */}
           <button
             onClick={() => {
-              const container = document.getElementById('category-scroll');
+              const container = document.getElementById("category-scroll");
               if (container) {
-                container.scrollBy({ left: 200, behavior: 'smooth' });
+                container.scrollBy({ left: 200, behavior: "smooth" });
               }
             }}
             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hidden md:flex"
@@ -386,8 +386,8 @@ export function ProjectRecommendations({
             id="category-scroll"
             className="flex items-center gap-1 overflow-x-auto scrollbar-hide scroll-smooth px-8 md:px-10"
             style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
           >
             {categories.map((category) => {
@@ -411,9 +411,7 @@ export function ProjectRecommendations({
                   />
 
                   <span className="flex items-center gap-1">
-                    <span
-                      className={cn("text-sm font-medium text-foreground")}
-                    >
+                    <span className={cn("text-sm font-medium text-foreground")}>
                       {category.name}
                     </span>
                     <span className="text-xs w-5 h-5 font-bold rounded-full bg-muted text-muted-foreground flex items-center justify-center ">
