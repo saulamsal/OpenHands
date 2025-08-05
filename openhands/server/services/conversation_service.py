@@ -54,6 +54,10 @@ async def create_new_conversation(
             'trigger': conversation_trigger.value,
         },
     )
+    logger.info(f'[ConversationService] Creating conversation with {len(image_urls) if image_urls else 0} image URLs')
+    if image_urls:
+        for i, url in enumerate(image_urls):
+            logger.info(f'[ConversationService] Image URL {i+1}: {url[:100]}...' if len(url) > 100 else f'[ConversationService] Image URL {i+1}: {url}')
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -135,14 +139,26 @@ async def create_new_conversation(
     )
     initial_message_action = None
     if initial_user_msg or image_urls:
+        logger.info(f'[ConversationService] Creating MessageAction with content length: {len(initial_user_msg) if initial_user_msg else 0}')
+        logger.info(f'[ConversationService] Creating MessageAction with {len(image_urls) if image_urls else 0} image URLs')
+        if image_urls:
+            for i, url in enumerate(image_urls):
+                logger.info(f'[ConversationService] MessageAction Image URL {i+1}: {url}')
+        
         initial_message_action = MessageAction(
             content=initial_user_msg or '',
             image_urls=image_urls or [],
         )
+        
+        logger.info(f'[ConversationService] MessageAction created successfully with {len(initial_message_action.image_urls)} image URLs')
 
     if attach_convo_id:
         logger.warning('Attaching convo ID is deprecated, skipping process')
 
+    logger.info(f'[ConversationService] Starting agent loop with initial_message_action: {initial_message_action is not None}')
+    if initial_message_action:
+        logger.info(f'[ConversationService] Initial message has {len(initial_message_action.image_urls)} image URLs')
+        
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,

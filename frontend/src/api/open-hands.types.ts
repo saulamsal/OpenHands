@@ -205,3 +205,71 @@ export interface CreateMicroagent {
   git_provider?: Provider;
   title?: string;
 }
+
+// App Store related types
+export interface AppIcon {
+  small: string;
+  medium: string;
+  large: string;
+}
+
+export interface AppDeveloper {
+  id: number;
+  name: string;
+  url?: string;
+  website?: string;
+}
+
+export interface AppRatings {
+  average: number;
+  total: number;
+}
+
+export interface AppPrice {
+  raw: number;
+  display: string;
+  currency: string;
+}
+
+export interface AppInfo {
+  id: number;
+  url: string;
+  name: string;
+  category: string;
+  contentRating: string;
+  description: string;
+  icons: AppIcon;
+  developer: AppDeveloper;
+  ratings: AppRatings;
+  price: AppPrice;
+  updatedAt: string;
+  currentVersion: string;
+  minimumOsVersion: string;
+  appSize: string;
+  screenshots: string[];
+  tabletScreenshots: string[];
+}
+
+export interface AppSearchResponse {
+  apps: AppInfo[];
+  total: number;
+}
+
+export interface AppDetailsResponse {
+  app: AppInfo;
+}
+
+export interface AppScreenshot {
+  url: string;
+  base64: string;
+  content_type: string;
+  size: number;
+}
+
+export interface AppScreenshotsResponse {
+  app_id: number;
+  app_name: string;
+  screenshots: AppScreenshot[];
+  total_available: number;
+  processed: number;
+}

@@ -2,6 +2,7 @@ import React from "react";
 import { LuZap, LuChevronsUpDown } from "react-icons/lu";
 
 import { IoLogoAppleAppstore } from "react-icons/io5";
+import { useNavigate } from "react-router";
 
 // Category Icons
 import { MdOutlineSportsBaseball } from "react-icons/md";
@@ -15,8 +16,11 @@ import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { MdOutlineAttachMoney } from "react-icons/md";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { AppInfo } from "#/api/open-hands.types";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { AppStoreModal } from "#/components/features/app-store/app-store-modal";
 import { ProgressiveBlur } from "#/../components/motion-primitives/progressive-blur";
-
+import { IoLogoGooglePlaystore } from "react-icons/io5";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -277,6 +281,10 @@ export function ProjectRecommendations({
   onCloneProject,
 }: ProjectRecommendationsProps) {
   const [selectedCategoryId, setSelectedCategoryId] = React.useState("all");
+  const [isAppStoreModalOpen, setIsAppStoreModalOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const { mutate: createConversation } = useCreateConversation();
+
   const currentFramework =
     frameworks.find((f) => f.key === selectedFramework) || frameworks[0];
 
@@ -286,6 +294,42 @@ export function ProjectRecommendations({
       : sampleRecommendations.filter(
           (rec) => rec.categoryId === selectedCategoryId,
         );
+
+  const handleAppStoreModalOpen = () => {
+    setIsAppStoreModalOpen(true);
+  };
+
+  const handleCreateConversationWithApp = (
+    message: string,
+    attachments: File[],
+    appInfo: AppInfo,
+  ) => {
+    createConversation(
+      {
+        query: message,
+        mode: "AGENTIC",
+        framework: selectedFramework,
+        attachments,
+      },
+      {
+        onSuccess: (data) => {
+          console.log("App clone conversation created:", data.conversation_id);
+          // Navigate to the conversation
+          navigate(`/conversations/${data.conversation_id}`, {
+            state: {
+              mode: "AGENTIC",
+              framework: selectedFramework,
+              appInfo,
+            },
+          });
+        },
+        onError: (error: any) => {
+          console.error("Failed to create app clone conversation:", error);
+          // TODO: Show error toast
+        },
+      },
+    );
+  };
   return (
     <div className="space-y-2 max-w-7xl mx-auto px-4 mt-20 ">
       <h2 className="text-4xl font-light tracking-tight text-center">
@@ -303,13 +347,22 @@ export function ProjectRecommendations({
           <p className="font-bold text-lg"> OR</p>
 
           <div>
-            <Button className="rounded-full py-0 h-8 bg-transparent border border-[#1C93F6]">
-              <p className="text-[#1C93F6]"> Find on App Store</p>
+            <Button
+              onClick={handleAppStoreModalOpen}
+              className="rounded-full py-0 h-8 bg-transparent border border-text-foreground hover:bg-text-foreground/10"
+            >
+              <p className="text-foreground"> Search on App Stores</p>
               <IoLogoAppleAppstore
                 width={30}
                 height={30}
                 style={{ color: "#1C93F6" }}
               />
+              {/* <IoLogoGooglePlaystore
+                width={30}
+                height={30}
+                style={{ color: "#1BB54B" }}
+              /> */}
+              <img src="https://www.svgrepo.com/show/452223/google-play.svg" alt="" width={16} height={16} />
             </Button>
           </div>
         </div>
@@ -467,6 +520,13 @@ export function ProjectRecommendations({
           View More Templates
         </Button>
       </div>
+
+      {/* App Store Modal */}
+      <AppStoreModal
+        open={isAppStoreModalOpen}
+        onOpenChange={setIsAppStoreModalOpen}
+        onCreateConversation={handleCreateConversationWithApp}
+      />
     </div>
   );
 }

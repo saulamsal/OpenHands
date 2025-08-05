@@ -365,9 +365,20 @@ class OpenHands {
 
     // Add attachments
     if (attachments && attachments.length > 0) {
-      attachments.forEach((file) => {
+      console.log(`[OpenHands API] Adding ${attachments.length} attachments to FormData:`);
+      attachments.forEach((file, index) => {
+        console.log(`[OpenHands API] Attachment ${index + 1}:`, {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified,
+        });
         formData.append(`attachments`, file);
       });
+      
+      // Log the FormData contents (keys only, as values are not easily readable)
+      const formDataKeys = Array.from(formData.keys());
+      console.log(`[OpenHands API] FormData keys:`, formDataKeys);
     }
 
     const headers: Record<string, string> = {};
@@ -378,9 +389,13 @@ class OpenHands {
     if (attachments && attachments.length > 0) {
       headers["Content-Type"] = "multipart/form-data";
     }
+    
+    console.log(`[OpenHands API] Request headers:`, headers);
 
     const { data } = await openHands.post<Conversation>(
-      "/api/conversations",
+      attachments && attachments.length > 0 
+        ? "/api/conversations/upload"  // Use the new upload route for attachments
+        : "/api/conversations",        // Use the regular route for JSON
       attachments && attachments.length > 0
         ? formData
         : {

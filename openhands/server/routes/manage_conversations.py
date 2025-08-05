@@ -1,11 +1,12 @@
 import itertools
 import os
 import re
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, status, UploadFile, Form
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
@@ -197,6 +198,144 @@ async def new_conversation(
         return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
+            conversation_status=agent_loop_info.status,
+        )
+    except MissingSettingsError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except LLMAuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': RuntimeStatus.ERROR_LLM_AUTHENTICATION.value,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except AuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+@app.post('/conversations/upload')
+async def new_conversation_with_attachments(
+    repository: Optional[str] = Form(None),
+    git_provider: Optional[str] = Form(None),
+    selected_branch: Optional[str] = Form(None),
+    initial_user_msg: Optional[str] = Form(None),
+    replay_json: Optional[str] = Form(None),
+    suggested_task: Optional[str] = Form(None),
+    create_microagent: Optional[str] = Form(None),
+    conversation_instructions: Optional[str] = Form(None),
+    team_id: Optional[str] = Form(None),
+    mode: Optional[str] = Form(None),
+    agentic_qa_test: Optional[bool] = Form(None),
+    framework: Optional[str] = Form(None),
+    attachments: list[UploadFile] = [],
+    _auth_user_id: Optional[str] = Depends(require_auth),
+    user_id: str = Depends(get_user_id),
+    team_id_from_header: str | None = Depends(get_team_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
+    user_secrets: UserSecrets = Depends(get_user_secrets),
+    auth_type: AuthType | None = Depends(get_auth_type),
+    db_session: AsyncSession = Depends(get_async_session),
+) -> ConversationResponse:
+    """Initialize a new session with file attachments support.
+    
+    This route handles multipart form data and can accept file attachments
+    along with the regular conversation parameters.
+    """
+    
+    # Process uploaded files to create image URLs
+    image_urls = []
+    logger.info(f"[Backend] Received {len(attachments)} attachments for conversation creation")
+    
+    if attachments:
+        temp_dir = tempfile.mkdtemp()
+        logger.info(f"[Backend] Created temp directory: {temp_dir}")
+        
+        try:
+            for i, attachment in enumerate(attachments):
+                logger.info(f"[Backend] Processing attachment {i+1}/{len(attachments)}: {attachment.filename}")
+                logger.info(f"[Backend] Attachment details: content_type={attachment.content_type}, size={attachment.size}")
+                
+                # Save file to temporary location
+                temp_file_path = os.path.join(temp_dir, attachment.filename or f"attachment_{i+1}")
+                with open(temp_file_path, "wb") as temp_file:
+                    content = await attachment.read()
+                    temp_file.write(content)
+                
+                # Verify file was written
+                file_size = os.path.getsize(temp_file_path)
+                logger.info(f"[Backend] Saved file to {temp_file_path}, size: {file_size} bytes")
+                
+                # Convert to file URL (this creates a local file URL that can be accessed)
+                file_url = f"file://{temp_file_path}"
+                image_urls.append(file_url)
+                
+                logger.info(f"[Backend] Created image URL: {file_url}")
+        except Exception as e:
+            logger.error(f"[Backend] Error processing attachments: {e}")
+            logger.error(f"[Backend] Exception type: {type(e).__name__}")
+            import traceback
+            logger.error(f"[Backend] Traceback: {traceback.format_exc()}")
+            # Continue without attachments rather than failing
+            image_urls = []
+    
+    logger.info(f'initializing_new_conversation_with_attachments: user_id={user_id}, attachments={len(attachments)}')
+    logger.info(f'attachments_processed: {len(image_urls)} files')
+    
+    # Set up conversation parameters
+    conversation_trigger = ConversationTrigger.GUI
+
+    if auth_type == AuthType.BEARER:
+        conversation_trigger = ConversationTrigger.REMOTE_API_KEY
+
+    try:
+        # Use team_id from form data or header
+        effective_team_id = team_id or team_id_from_header
+        logger.info(f"Using team_id: {effective_team_id} (form: {team_id}, header: {team_id_from_header})")
+        
+        # Import the helper function
+        from openhands.server.services.conversation_service import create_new_conversation
+        
+        logger.info(f"[Backend] About to create conversation with image_urls: {image_urls}")
+        logger.info(f"[Backend] Initial message preview: {initial_user_msg[:200] if initial_user_msg else 'None'}...")
+        
+        agent_loop_info = await create_new_conversation(
+            config,
+            user_id,
+            provider_tokens,
+            user_secrets,
+            repository,
+            selected_branch,
+            initial_user_msg,
+            image_urls,
+            replay_json,
+            conversation_instructions,
+            conversation_trigger,
+            git_provider=git_provider,
+            team_id=effective_team_id,
+        )
+        
+        logger.info(f"[Backend] Conversation created successfully: {agent_loop_info.conversation_id}")
+        return ConversationResponse(
+            status='created',
+            conversation_id=agent_loop_info.conversation_id,
             conversation_status=agent_loop_info.status,
         )
     except MissingSettingsError as e:

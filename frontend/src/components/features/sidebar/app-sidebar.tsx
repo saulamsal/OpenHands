@@ -180,18 +180,19 @@ export function AppSidebar() {
 
   const footerItems = React.useMemo(
     () => [
-      {
-        title: "Documentation",
-        icon: BookOpen,
-        url: "/docs",
-        disabled: settings?.EMAIL_VERIFIED === false,
-        isActive: isDocsActive,
-      },
+      // {
+      //   title: "Documentation",
+      //   icon: BookOpen,
+      //   url: "/docs",
+      //   disabled: settings?.EMAIL_VERIFIED === false,
+      //   isActive: isDocsActive,
+      // },
       {
         title: "Settings",
         icon: Settings,
-        onClick: handleShowSettings,
-        disabled: settings?.EMAIL_VERIFIED === false,
+        // onClick: handleShowSettings,
+        url: "/settings",
+        // disabled: settings?.EMAIL_VERIFIED === false,
         isActive: isSettingsActive,
       },
     ],
@@ -205,7 +206,7 @@ export function AppSidebar() {
 
   const userForActions = React.useMemo(() => {
     if (user) {
-      return { avatar_url: user.email }; // Use email as fallback avatar
+      return { avatar_url: user.avatar_url }; // Use email as fallback avatar
     }
     if (gitUser.data) {
       return { avatar_url: gitUser.data.avatar_url };
@@ -253,7 +254,7 @@ export function AppSidebar() {
           )}
 
           {/* New Project Button */}
-          <div className="">
+          {/* <div className="">
             <Button
               onClick={() => {}}
               className={`w-full gap-2 ${state === "collapsed" ? "justify-center" : "justify-start"}`}
@@ -268,7 +269,7 @@ export function AppSidebar() {
                 </span>
               )}
             </Button>
-          </div>
+          </div> */}
         </SidebarHeader>
 
         <SidebarContent>
